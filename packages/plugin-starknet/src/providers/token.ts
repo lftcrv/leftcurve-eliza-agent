@@ -12,7 +12,7 @@ import {
     CalculatedBuyAmounts,
     Prices,
 } from "../types/trustDB.ts";
-import { WalletProvider, Item } from "./walletProvider.ts";
+//=import { WalletProvider, Item } from "./walletProvider.ts";
 import { num } from "starknet";
 import {
     analyzeHighSupplyHolders,

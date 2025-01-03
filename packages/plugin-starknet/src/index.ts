@@ -3,6 +3,7 @@ import { executeSwap } from "./actions/swap";
 import transfer from "./actions/transfer";
 import { deployToken } from "./actions/unruggable";
 import transferSubdomain from "./actions/subdomain";
+import { tokenProvider } from "./providers/token";
 export const PROVIDER_CONFIG = {
     AVNU_API: "https://starknet.impulse.avnu.fi/v1",
     MAX_RETRIES: 3,
@@ -23,7 +24,7 @@ export const starknetPlugin: Plugin = {
     description: "Starknet Plugin for Eliza",
     actions: [transfer, executeSwap, deployToken, transferSubdomain],
     evaluators: [],
-    providers: [],
+    providers: [tokenProvider],
 };
 
 export default starknetPlugin;

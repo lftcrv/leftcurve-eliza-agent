@@ -27,6 +27,7 @@ import {
 } from "@ai16z/eliza";
 import { zgPlugin } from "@ai16z/plugin-0g";
 import { bootstrapPlugin } from "@ai16z/plugin-bootstrap";
+import { myPlugin } from "@ai16z/my-plugin";
 import createGoatPlugin from "@ai16z/plugin-goat";
 // import { intifacePlugin } from "@ai16z/plugin-intiface";
 import { DirectClient } from "@ai16z/client-direct";
@@ -48,6 +49,7 @@ import { multiversxPlugin } from "@ai16z/plugin-multiversx";
 import { nearPlugin } from "@ai16z/plugin-near";
 import { nftGenerationPlugin } from "@ai16z/plugin-nft-generation";
 import { createNodePlugin } from "@ai16z/plugin-node";
+import { starknetPlugin } from "@ai16z/plugin-starknet";
 import { solanaPlugin } from "@ai16z/plugin-solana";
 import { suiPlugin } from "@ai16z/plugin-sui";
 import { TEEMode, teePlugin } from "@ai16z/plugin-tee";
@@ -58,6 +60,9 @@ import fs from "fs";
 import path from "path";
 import { fileURLToPath } from "url";
 import yargs from "yargs";
+
+import { userDataProvider } from "./userDataProvider"
+import { userDataEvaluator } from "./userDataEvaluator";
 
 const __filename = fileURLToPath(import.meta.url); // get the resolved path to the file
 const __dirname = path.dirname(__filename); // get the name of the directory
@@ -482,75 +487,9 @@ export async function createAgent(
         // character.plugins are handled when clients are added
         plugins: [
             bootstrapPlugin,
-            getSecret(character, "CONFLUX_CORE_PRIVATE_KEY")
-                ? confluxPlugin
-                : null,
-            nodePlugin,
-            getSecret(character, "SOLANA_PUBLIC_KEY") ||
-            (getSecret(character, "WALLET_PUBLIC_KEY") &&
-                !getSecret(character, "WALLET_PUBLIC_KEY")?.startsWith("0x"))
-                ? solanaPlugin
-                : null,
-            (getSecret(character, "NEAR_ADDRESS") ||
-                getSecret(character, "NEAR_WALLET_PUBLIC_KEY")) &&
-            getSecret(character, "NEAR_WALLET_SECRET_KEY")
-                ? nearPlugin
-                : null,
-            getSecret(character, "EVM_PUBLIC_KEY") ||
-            (getSecret(character, "WALLET_PUBLIC_KEY") &&
-                getSecret(character, "WALLET_PUBLIC_KEY")?.startsWith("0x"))
-                ? evmPlugin
-                : null,
-            (getSecret(character, "SOLANA_PUBLIC_KEY") ||
-                (getSecret(character, "WALLET_PUBLIC_KEY") &&
-                    !getSecret(character, "WALLET_PUBLIC_KEY")?.startsWith(
-                        "0x"
-                    ))) &&
-            getSecret(character, "SOLANA_ADMIN_PUBLIC_KEY") &&
-            getSecret(character, "SOLANA_PRIVATE_KEY") &&
-            getSecret(character, "SOLANA_ADMIN_PRIVATE_KEY")
-                ? nftGenerationPlugin
-                : null,
-            getSecret(character, "ZEROG_PRIVATE_KEY") ? zgPlugin : null,
-            getSecret(character, "COINBASE_COMMERCE_KEY")
-                ? coinbaseCommercePlugin
-                : null,
-            getSecret(character, "FAL_API_KEY") ||
-            getSecret(character, "OPENAI_API_KEY") ||
-            getSecret(character, "VENICE_API_KEY") ||
-            getSecret(character, "HEURIST_API_KEY")
-                ? imageGenerationPlugin
-                : null,
-            ...(getSecret(character, "COINBASE_API_KEY") &&
-            getSecret(character, "COINBASE_PRIVATE_KEY")
-                ? [
-                      coinbaseMassPaymentsPlugin,
-                      tradePlugin,
-                      tokenContractPlugin,
-                      advancedTradePlugin,
-                  ]
-                : []),
-            ...(teeMode !== TEEMode.OFF && walletSecretSalt
-                ? [teePlugin, solanaPlugin]
-                : []),
-            getSecret(character, "COINBASE_API_KEY") &&
-            getSecret(character, "COINBASE_PRIVATE_KEY") &&
-            getSecret(character, "COINBASE_NOTIFICATION_URI")
-                ? webhookPlugin
-                : null,
-            getSecret(character, "ALCHEMY_API_KEY") ? goatPlugin : null,
-            getSecret(character, "FLOW_ADDRESS") &&
-            getSecret(character, "FLOW_PRIVATE_KEY")
-                ? flowPlugin
-                : null,
-            getSecret(character, "APTOS_PRIVATE_KEY") ? aptosPlugin : null,
-            getSecret(character, "MVX_PRIVATE_KEY") ? multiversxPlugin : null,
-            getSecret(character, "ZKSYNC_PRIVATE_KEY") ? zksyncEraPlugin : null,
-            getSecret(character, "TON_PRIVATE_KEY") ? tonPlugin : null,
-            getSecret(character, "SUI_PRIVATE_KEY") ? suiPlugin : null,
-            getSecret(character, "STORY_PRIVATE_KEY") ? storyPlugin : null,
+            myPlugin
         ].filter(Boolean),
-        providers: [],
+        providers: [userDataProvider],
         actions: [],
         services: [],
         managers: [],

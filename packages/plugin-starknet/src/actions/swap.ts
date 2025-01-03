@@ -117,8 +117,13 @@ export const executeSwap: Action = {
             callback?.({ text: "Invalid swap content, please try again." });
             return false;
         }
-
+        elizaLogger.log("ooookkkkk 999999");
         try {
+            elizaLogger.log("ooookkkkk 00000");
+            callback?.({ text: "OOOOOOOOOOOOKKKK 00000." });
+            elizaLogger.log("buyTokenaddress : " + response.buyTokenAddress);
+            elizaLogger.log("sellAmount : " + response.sellAmount);
+            elizaLogger.log("sellTokenAddress : " + response.sellTokenAddress);
             // Get quote
             const quoteParams: QuoteRequest = {
                 sellTokenAddress: response.sellTokenAddress,
@@ -127,7 +132,10 @@ export const executeSwap: Action = {
             };
 
             const quote = await fetchQuotes(quoteParams);
-
+            callback?.({ text: "OOOOOOOOOOOOKKKK 1111." });
+            elizaLogger.log("ooookkkkk 11111111111");
+            //getStarknetAccount(runtime);
+            elizaLogger.log("get starknet account OKKKK");
             // Execute swap
             const swapResult = await executeAvnuSwap(
                 getStarknetAccount(runtime),

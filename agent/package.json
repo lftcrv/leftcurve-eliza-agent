@@ -33,6 +33,7 @@
     "@ai16z/plugin-bootstrap": "workspace:*",
     "@ai16z/plugin-intiface": "workspace:*",
     "@ai16z/plugin-coinbase": "workspace:*",
+    "@ai16z/my-plugin": "workspace:*",
     "@ai16z/plugin-conflux": "workspace:*",
     "@ai16z/plugin-evm": "workspace:*",
     "@ai16z/plugin-flow": "workspace:*",
