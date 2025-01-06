@@ -14,5 +14,5 @@ export const myPlugin: Plugin = {
     name: "devSchool",
     description: "Dev School example plugin",
     actions: [helloWorldAction, currentNewsAction],
-    providers: [randomEmotionProvider, marketInfosProvider]
+    providers: [randomEmotionProvider]
 };

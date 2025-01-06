@@ -487,7 +487,8 @@ export async function createAgent(
         // character.plugins are handled when clients are added
         plugins: [
             bootstrapPlugin,
-            myPlugin
+            myPlugin,
+            starknetPlugin
         ].filter(Boolean),
         providers: [userDataProvider],
         actions: [],

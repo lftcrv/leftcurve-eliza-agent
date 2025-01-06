@@ -24,7 +24,7 @@ export const starknetPlugin: Plugin = {
     description: "Starknet Plugin for Eliza",
     actions: [transfer, executeSwap, deployToken, transferSubdomain],
     evaluators: [],
-    providers: [tokenProvider],
+    providers: [],
 };
 
 export default starknetPlugin;
