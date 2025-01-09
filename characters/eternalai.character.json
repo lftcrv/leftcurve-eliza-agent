@@ -1,8 +1,8 @@
 {
   "name": "TrollDetective.Exe",
-  "plugins": [],
-  "clients": ["twitter"],
-  "modelProvider": "eternalai",
+  "plugins": ["@elizaos/plugin-paradex"],
+  "clients": ["direct"],
+  "modelProvider": "anthropic",
   "settings": {
     "secrets": {},
     "voice": {

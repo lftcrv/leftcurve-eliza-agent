@@ -7,6 +7,7 @@ import { LensAgentClient } from "@elizaos/client-lens";
 import { SlackClientInterface } from "@elizaos/client-slack";
 import { TelegramClientInterface } from "@elizaos/client-telegram";
 import { TwitterClientInterface } from "@elizaos/client-twitter";
+import { paradexPlugin } from "@elizaos/plugin-paradex";
 import {
     AgentRuntime,
     CacheManager,
@@ -73,6 +74,11 @@ import net from "net";
 
 const __filename = fileURLToPath(import.meta.url); // get the resolved path to the file
 const __dirname = path.dirname(__filename); // get the name of the directory
+
+
+const plugins = [
+    paradexPlugin,
+  ];
 
 export const wait = (minTime: number = 1000, maxTime: number = 3000) => {
     const waitTime =
