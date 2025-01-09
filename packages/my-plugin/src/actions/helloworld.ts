@@ -34,6 +34,7 @@ export const helloWorldAction: Action = {
         _callback({
             text : helloworld,
         })
+        console.log("ITS WORKING : ", helloworld);
         return true;
     },
     examples: [
