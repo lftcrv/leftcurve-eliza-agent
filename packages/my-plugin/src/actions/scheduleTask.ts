@@ -65,73 +65,127 @@ EXECUTE_STARKNET_SWAP: Perform a token swap on starknet. Use this action when a 
         "interval": 1,
         "duration": 60
     }
-
     `;
 
-        const extractedParams = await generateText({
-            runtime,
-            context,
-            modelClass: ModelClass.SMALL,
-            stop: ["\n"],
-        });
 
-        let params;
+    const extractedParams = await generateText({
+        runtime,
+        context,
+        modelClass: ModelClass.SMALL,
+        stop: ["\n"],
+    });
+
+    let params;
+    try {
+        params = JSON.parse(extractedParams);
+        if (!params.actionName || !params.interval || !params.duration) {
+            throw new Error("Missing required parameters.");
+        }
+    } catch (error) {
+        throw new Error("Failed to parse extracted parameters: " + extractedParams);
+    }
+
+    const { actionName, actionParams = {}, interval, duration } = params;
+
+    const action = runtime.actions.find((a) => a.name === actionName);
+    if (!action) {
+        throw new Error(`Action "${actionName}" not found`);
+    }
+
+    // Générer un message minimal si aucun paramètre n'est requis
+    const clonedMessage = {
+        userId: message.userId,
+        agentId: runtime.agentId,
+        roomId: message.roomId,
+        content: {
+            text: actionParams.text || "", // Texte vide si aucun paramètre
+            ...actionParams.content,
+        },
+    };
+
+    const endTime = Date.now() + duration * 60 * 1000;
+
+    const intervalId = setInterval(async () => {
         try {
-            params = JSON.parse(extractedParams);
-        } catch (error) {
-            throw new Error("Failed to parse extracted parameters: " + extractedParams);
-        }
-
-        const { actionName, actionParams, interval, duration } = params;
-
-        // Étape 2 : Trouver l'action correspondante
-        const action = runtime.actions.find((a) => a.name === actionName);
-
-        if (!action) {
-            throw new Error(`Action ${actionName} not found`);
-        }
-
-        // Cloner le message pour éviter les modifications
-    const clonedMessage = JSON.parse(JSON.stringify(actionParams));
-
-        const endTime = Date.now() + duration * 60 * 1000;
-
-        const intervalId = setInterval(async () => {
             if (Date.now() > endTime) {
                 clearInterval(intervalId);
                 return;
             }
 
-            // Exécuter l'action cible
-            await action.handler(runtime, actionParams, state, options, callback);
-            callback({
-                text: `The Hello World action is done.`,
-            });
-        }, interval * 60 * 1000);
+            console.log(`Executing scheduled action "${actionName}"`);
 
-        // Retourne une confirmation à l'utilisateur
-        callback({
-            text: `Scheduled action "${actionName}" to run every ${interval} minutes for ${duration} minutes.`,
-        });
-        return true;
-    },
-    examples: [
-        [
-            {
-                user: "{{user1}}",
-                content: {
-                    text: "Give me news about AI every 5 minutes for 1 hour.",
-                    action: "SCHEDULE_TASK",
-                    actionName: "CURRENT_NEWS",
-                    actionParams: { content: { text: "news about AI" } },
-                    interval: 5,
-                    duration: 60,
-                },
+            await action.handler(runtime, actionParams, state, options, callback);
+        } catch (error) {
+            console.error(`Error executing scheduled action "${actionName}":`, error);
+            clearInterval(intervalId);
+        }
+    }, interval * 60 * 1000);
+
+    callback({
+        text: `Scheduled action "${actionName}" every ${interval} minutes for ${duration} minutes.`,
+    });
+
+    return true;
+},
+
+examples: [
+    [
+        {
+            user: "{{user1}}",
+            content: {
+                text: "Call the HELLO_WORLD action every 2 minutes for 10 minutes.",
+                action: "SCHEDULE_TASK",
+                actionName: "HELLO_WORLD",
+                interval: 2,
+                duration: 10,
             },
-            {
-                user: "{{user2}}",
-                content: { text: "", action: "SCHEDULE_TASK" },
+        },
+        {
+            user: "{{user2}}",
+            content: {
+                text: 'Scheduled action "HELLO_WORLD" every 2 minutes for 10 minutes.',
             },
-        ],
+        },
     ],
+
+    [
+        {
+            user: "{{user1}}",
+            content: {
+                text: "Give me news about AI every 5 minutes for 1 hour.",
+                action: "SCHEDULE_TASK",
+                actionName: "CURRENT_NEWS",
+                actionParams: { content: { text: "AI" } },
+                interval: 5,
+                duration: 60,
+            },
+        },
+        {
+            user: "{{user2}}",
+            content: {
+                text: 'Scheduled action "CURRENT_NEWS" every 5 minutes for 60 minutes.',
+            },
+        },
+    ],
+
+    [
+        {
+            user: "{{user1}}",
+            content: {
+                text: "Run the IGNORE action every 1 minute for 5 minutes.",
+                action: "SCHEDULE_TASK",
+                actionName: "IGNORE",
+                interval: 1,
+                duration: 5,
+            },
+        },
+        {
+            user: "{{user2}}",
+            content: {
+                text: 'Scheduled action "IGNORE" every 1 minute for 5 minutes.',
+            },
+        },
+    ]
+],
+
 };
