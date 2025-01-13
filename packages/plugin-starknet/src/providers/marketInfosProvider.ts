@@ -5,38 +5,17 @@ interface LinePriceFeedItem {
     value: number;
   }
 
-  interface MarketData {
-    currentPrice: number;
-    marketCap: number;
-    fullyDilutedValuation?: number | null;
-    starknetTvl: number;
-    priceChange1h: number;
-    priceChangePercentage1h: number;
-    priceChange24h: number;
-    priceChangePercentage24h: number;
-    priceChange7d: number;
-    priceChangePercentage7d: number;
-    marketCapChange24h?: number | null;
-    marketCapChangePercentage24h?: number | null;
-    starknetVolume24h: number;
-    starknetTradingVolume24h: number;
+  interface TokenPriceFeed {
+    tokenAddress: string;
+    tokenName: string;
+    priceFeed: LinePriceFeedItem[];
   }
 
-  interface Token {
-    position: number;
-    name: string;
-    symbol: string;
-    address: string;
-    decimals: number;
-    logoUri: string;
-    verified: boolean;
-    market: MarketData;
-    linePriceFeedInUsd: LinePriceFeedItem[];
-  }
+  const fetchTokenPriceFeed = async (tokenAddress: string, tokenName: string): Promise<TokenPriceFeed> => {
+    const url = `https://starknet.impulse.avnu.fi/v1/tokens/${tokenAddress}/prices/line?resolution=1D`;
 
-  const getTokensWithLargestTVL = async (): Promise<Token[]> => {
     try {
-      const response = await fetch("https://starknet.impulse.avnu.fi/v1/tokens", {
+      const response = await fetch(url, {
         method: "GET",
         headers: {
           "Content-Type": "application/json",
@@ -47,73 +26,51 @@ interface LinePriceFeedItem {
         throw new Error(`HTTP Error: ${response.status} - ${response.statusText}`);
       }
 
-      const data: Token[] = await response.json();
-      return data;
+      const data: LinePriceFeedItem[] = await response.json();
+      return {
+        tokenAddress,
+        tokenName,
+        priceFeed: data,
+      };
     } catch (error) {
-      console.error("Error :", error);
+      console.error(`Error fetching price feed for token ${tokenName}:`, error);
       throw error;
     }
   };
 
-
-  const processTokensForLLM = (tokens: Token[]) => {
-    return tokens
-      .filter((token) => token.position <= 20)
-      .map((token) => ({
-        name: token.name,
-        symbol: token.symbol,
-        currentPrice: token.market.currentPrice,
-        priceChange1h: token.market.priceChangePercentage1h,
-        priceChange24h: token.market.priceChangePercentage24h,
-        priceChange7d: token.market.priceChangePercentage7d,
-        marketCap: token.market.marketCap,
-        starknetTvl: token.market.starknetTvl,
-        starknetTradingVolume24h: token.market.starknetTradingVolume24h,
-        linePriceFeedInUsd: token.linePriceFeedInUsd.slice(0, 20).map((item) => ({
-          date: item.date,
-          value: item.value,
-        })),
-      }));
+  const fetchMultipleTokenPriceFeeds = async (tokens: { address: string; name: string }[]): Promise<TokenPriceFeed[]> => {
+    const promises = tokens.map((token) => fetchTokenPriceFeed(token.address, token.name));
+    return Promise.all(promises);
   };
+
+    const tokens = [
+      { address: "0x03b405a98c9e795d427fe82cdeeeed803f221b52471e3a757574a2b4180793ee", name: "BROTHER" },
+      { address: "0x03fe2b97c1fd336e750087d68b9b867997fd64a2661ff3ca5a7c771641e8e7ac", name: "BTC" },
+      { address: "0x049d36570d4e46f48e99674bd3fcc84644ddd6b96f7c741b1562b82f9e004dc7", name: "ETH" },
+      { address: "0x04718f5a0fc34cc1af16a1cdee98ffb20c31f5cd61d6ab07201858f4287c938d", name: "STRK" },
+      { address: "0x0124aeb495b947201f5fac96fd1138e326ad86195b98df6dec9009158a533b49", name: "LORDS" },
+      { address: "0x68f5c6a61780768455de69077e07e89787839bf8166decfbf92b645209c0fb8", name: "USDT" },
+      { address: "0x53c91253bc9682c04929ca02ed00b3e423f6710d2ee7e0d5ebb06f3ecf368a8", name: "USDC" },
+      { address: "0x42b8f0484674ca266ac5d08e4ac6a3fe65bd3129795def2dca5c34ecc5f96d2", name: "wstETH" },
+      { address: "0x3fe2b97c1fd336e750087d68b9b867997fd64a2661ff3ca5a7c771641e8e7ac", name: "WBTC" },
+      { address: "0x49210ffc442172463f3177147c1aeaa36c51d152c1b0630f2364c300d4f48ee", name: "UNI" },
+      { address: "0x5574eb6b8789a91466f902c380d978e472db68170ff82a5b650b95a58ddf4ad", name: "DAI" },
+      { address: "0x319111a5037cbec2b3e638cc34a3474e2d2608299f3e62866e9cc683208c610", name: "rETH" },
+      { address: "0x70a76fd48ca0ef910631754d77dd822147fe98a569b826ec85e3c33fde586ac", name: "LUSD" },
+      { address: "0x28d709c875c0ceac3dce7065bec5328186dc89fe254527084d1689910954b0a", name: "xSTRK" },
+      { address: "0xc530f2c0aa4c16a0806365b0898499fba372e5df7a7172dc6fe9ba777e8007", name: "NSTR" },
+      { address: "0x585c32b625999e6e5e78645ff8df7a9001cf5cf3eb6b80ccdd16cb64bd3a34", name: "ZEND" },
+      { address: "0x4878d1148318a31829523ee9c6a5ee563af6cd87f90a30809e5b0d27db8a9b", name: "SWAY" },
+      { address: "0x102d5e124c51b936ee87302e0f938165aec96fb6c2027ae7f3a5ed46c77573b", name: "SSTR" },
+    ];
 
   const marketInfosProvider: Provider = {
     get: async (_runtime: IAgentRuntime, _message: Memory, _state?: State) => {
-        const prompt = `
-You are a trading decision assistant specializing in analyzing cryptocurrency market data. Below is information about the top 20 tokens ranked by Total Value Locked (TVL) on StarkNet. For each token, you have the following data:
-
-1. Basic Information: Name and symbol.
-2. Market Metrics:
-   - Current price.
-   - Price changes over the last 1 hour, 24 hours, and 7 days (in percentages).
-   - Market capitalization.
-   - Total Value Locked (TVL).
-   - Trading volume on StarkNet over the last 24 hours.
-3. Historical Price Data: A price feed (linePriceFeedInUsd) showing price trends over time with precise dates and values.
-
-Your task:
-1. Identify the tokens with the highest growth potential based on price changes (1h, 24h, and 7d) and trading volume trends.
-2. Highlight any tokens that are undervalued, considering their high TVL compared to their market capitalization.
-3. For each token, analyze the historical price trends (linePriceFeedInUsd) to identify significant price patterns or potential reversals.
-4. Recommend which tokens are good candidates for short-term trading and which are better suited for long-term holding, based on your analysis.
-
-Output format:
-Provide your insights in the following structure:
-- Token Symbol: Your insights and recommendations (e.g., "LORDS: High potential for short-term gains due to significant 24h growth and consistent trading volume increase.").
-- Include key metrics from your analysis to justify your recommendations.
-- Summarize the top 3 tokens for immediate action (buy, hold, or sell) with clear reasoning.
-
-Data : \n
-`;
-
         try {
-            const tokens = await getTokensWithLargestTVL();
-
-            const processedData = processTokensForLLM(tokens);
-
-            return prompt + JSON.stringify(processedData, null, 2);
+            const priceFeeds = await fetchMultipleTokenPriceFeeds(tokens);
+            return JSON.stringify(priceFeeds, null, 2);
           } catch (error) {
-            console.error("Error :", error);
-            throw error;
+            console.error("Error fetching token price feeds:", error);
           }
     },
 };

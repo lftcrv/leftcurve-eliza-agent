@@ -45,7 +45,7 @@ IGNORE: Call this action if ignoring the user. If the user is aggressive, creepy
 SEND_TOKEN: MUST use this action if the user requests send a token or transfer a token, the request might be varied, but it will always be a token transfer. If the user requests a transfer of lords, use this action.,
 CURRENT_NEWS: Get the current news for a search term if asked by the user.,
 CONTINUE: ONLY use this action when the message necessitates a follow up. Do not use this action when the conversation is finished or the user does not wish to speak (use IGNORE instead). If the last message action was CONTINUE, and the user has not responded. Use sparingly.,
-EXECUTE_STARKNET_SWAP: Perform a token swap on starknet. Use this action when a user asks you to swap tokens anything.,
+EXECUTE_STARKNET_TRADE: Perform a token swap on starknet. Use this action when a user asks you to trade.
 
         The user's message is:
         "${message.content.text}"

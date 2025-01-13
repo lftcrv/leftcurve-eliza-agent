@@ -76,7 +76,7 @@ interface LinePriceFeedItem {
       }));
   };
 
-  const marketInfosProvider: Provider = {
+  const largestTVLProvider: Provider = {
     get: async (_runtime: IAgentRuntime, _message: Memory, _state?: State) => {
         const prompt = `
 You are a trading decision assistant specializing in analyzing cryptocurrency market data. Below is information about the top 20 tokens ranked by Total Value Locked (TVL) on StarkNet. For each token, you have the following data:
@@ -118,4 +118,4 @@ Data : \n
     },
 };
 
-export { marketInfosProvider };
+export { largestTVLProvider };

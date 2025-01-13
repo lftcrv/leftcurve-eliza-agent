@@ -6,6 +6,7 @@ import transferSubdomain from "./actions/subdomain";
 import { tokenProvider } from "./providers/token";
 import { tradeAction } from "./actions/trade";
 import { marketInfosProvider } from "./providers/marketInfosProvider";
+import { walletBalancesProvider } from "./providers/walletProvider";
 export const PROVIDER_CONFIG = {
     AVNU_API: "https://starknet.impulse.avnu.fi/v1",
     MAX_RETRIES: 3,
@@ -26,7 +27,7 @@ export const starknetPlugin: Plugin = {
     description: "Starknet Plugin for Eliza",
     actions: [tradeAction],
     evaluators: [],
-    providers: [marketInfosProvider],
+    providers: [walletBalancesProvider, marketInfosProvider],
 };
 
 export default starknetPlugin;

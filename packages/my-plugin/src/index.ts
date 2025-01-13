@@ -4,7 +4,7 @@ import { factEvaluator } from "./evaluators/fact.ts";
 import { currentNewsAction } from "./actions/currentnews.ts";
 import { randomEmotionProvider } from "./providers/getEmotion.ts";
 import { tokenPricesProvider } from "./providers/tokenPricesProvider.ts";
-import { marketInfosProvider } from "./providers/marketInfosProvider.ts";
+import { largestTVLProvider } from "./providers/largestTVLtokens.ts";
 import { scheduleTaskAction } from "./actions/scheduleTask.ts";
 
 export * as actions from "./actions/index.ts";
