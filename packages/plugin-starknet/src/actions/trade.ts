@@ -7,6 +7,7 @@ import {
     elizaLogger,
     generateMessageResponse,
     generateObjectDeprecated,
+    generateText,
     generateTrueOrFalse,
     HandlerCallback,
     IAgentRuntime,
@@ -21,14 +22,171 @@ import {
     QuoteRequest,
 } from "@avnu/avnu-sdk";
 
+import { RpcProvider, Contract } from "starknet";
+
 import { getStarknetAccount } from "../utils/index.ts";
 import { validateStarknetConfig } from "../environment.ts";
+
+interface MarketData {
+    currentPrice: number;
+    marketCap: number;
+    fullyDilutedValuation?: number | null;
+    starknetTvl: number;
+    priceChange1h: number;
+    priceChangePercentage1h: number;
+    priceChange24h: number;
+    priceChangePercentage24h: number;
+    priceChange7d: number;
+    priceChangePercentage7d: number;
+    marketCapChange24h?: number | null;
+    marketCapChangePercentage24h?: number | null;
+    starknetVolume24h: number;
+    starknetTradingVolume24h: number;
+}
+
+interface TokenDetails {
+    name: string;
+    symbol: string;
+    address: string;
+    decimals: number;
+    coingeckoid?: string;
+    verified: boolean;
+    market: MarketData;
+    tags: string[];
+}
 
 interface SwapContent {
     sellTokenAddress: string;
     buyTokenAddress: string;
     sellAmount: string;
 }
+
+interface LinePriceFeedItem {
+    date: string;
+    value: number;
+}
+
+interface TokenPriceFeed {
+    tokenAddress: string;
+    tokenName: string;
+    priceFeed: LinePriceFeedItem[];
+}
+
+interface Swap {
+    sellTokenAddress: string;
+    buyTokenAddress: string;
+    sellAmount: string;
+}
+
+interface TradeDecision {
+  shouldTrade: "yes" | "no";
+  swap: Swap;
+  Explanation: string;
+  Tweet: string;
+}
+
+const tokens = [
+    { address: "0x03b405a98c9e795d427fe82cdeeeed803f221b52471e3a757574a2b4180793ee", name: "BROTHER" },
+    { address: "0x03fe2b97c1fd336e750087d68b9b867997fd64a2661ff3ca5a7c771641e8e7ac", name: "BTC" },
+    { address: "0x049d36570d4e46f48e99674bd3fcc84644ddd6b96f7c741b1562b82f9e004dc7", name: "ETH" },
+    { address: "0x04718f5a0fc34cc1af16a1cdee98ffb20c31f5cd61d6ab07201858f4287c938d", name: "STRK" },
+    { address: "0x0124aeb495b947201f5fac96fd1138e326ad86195b98df6dec9009158a533b49", name: "LORDS" },
+    { address: "0x68f5c6a61780768455de69077e07e89787839bf8166decfbf92b645209c0fb8", name: "USDT" },
+    { address: "0x53c91253bc9682c04929ca02ed00b3e423f6710d2ee7e0d5ebb06f3ecf368a8", name: "USDC" },
+    { address: "0x42b8f0484674ca266ac5d08e4ac6a3fe65bd3129795def2dca5c34ecc5f96d2", name: "wstETH" },
+    { address: "0x3fe2b97c1fd336e750087d68b9b867997fd64a2661ff3ca5a7c771641e8e7ac", name: "WBTC" },
+    { address: "0x49210ffc442172463f3177147c1aeaa36c51d152c1b0630f2364c300d4f48ee", name: "UNI" },
+    { address: "0x5574eb6b8789a91466f902c380d978e472db68170ff82a5b650b95a58ddf4ad", name: "DAI" },
+    { address: "0x319111a5037cbec2b3e638cc34a3474e2d2608299f3e62866e9cc683208c610", name: "rETH" },
+    { address: "0x70a76fd48ca0ef910631754d77dd822147fe98a569b826ec85e3c33fde586ac", name: "LUSD" },
+    { address: "0x28d709c875c0ceac3dce7065bec5328186dc89fe254527084d1689910954b0a", name: "xSTRK" },
+    { address: "0xc530f2c0aa4c16a0806365b0898499fba372e5df7a7172dc6fe9ba777e8007", name: "NSTR" },
+    { address: "0x585c32b625999e6e5e78645ff8df7a9001cf5cf3eb6b80ccdd16cb64bd3a34", name: "ZEND" },
+    { address: "0x4878d1148318a31829523ee9c6a5ee563af6cd87f90a30809e5b0d27db8a9b", name: "SWAY" },
+    { address: "0x102d5e124c51b936ee87302e0f938165aec96fb6c2027ae7f3a5ed46c77573b", name: "SSTR" },
+  ];
+
+const fetchTokenDetails = async (tokenAddress: string): Promise<TokenDetails> => {
+    const url = `https://starknet.impulse.avnu.fi/v1/tokens/${tokenAddress}`;
+
+    try {
+      const response = await fetch(url, {
+        method: "GET",
+        headers: {
+          "Content-Type": "application/json",
+        },
+      });
+
+      if (!response.ok) {
+        throw new Error(`HTTP Error: ${response.status} - ${response.statusText}`);
+      }
+
+      const data = await response.json();
+
+      const { logoUri, ...filteredData } = data;
+
+      return filteredData as TokenDetails;
+    } catch (error) {
+      console.error(`Error fetching details for token ${tokenAddress}:`, error);
+      throw error;
+    }
+  };
+
+const fetchMultipleTokenDetails = async (tokens: { address: string; name: string }[]): Promise<TokenDetails[]> => {
+  const promises = tokens.map((token) => fetchTokenDetails(token.address));
+  return Promise.all(promises);
+};
+
+const MultipleTokenInfos = async () => {
+
+    try {
+      const tokenDetails = await fetchMultipleTokenDetails(tokens);
+      return "# Here is some information about the market :\n" + JSON.stringify(tokenDetails, null, 2);
+    } catch (error) {
+      console.error("Error fetching detailed token information:", error);
+    }
+  };
+
+
+
+const fetchTokenPriceFeed = async (tokenAddress: string, tokenName: string): Promise<TokenPriceFeed> => {
+    const url = `https://starknet.impulse.avnu.fi/v1/tokens/${tokenAddress}/prices/line?resolution=1H`;
+
+    try {
+      const response = await fetch(url, {
+        method: "GET",
+        headers: {
+          "Content-Type": "application/json",
+        },
+      });
+
+      if (!response.ok) {
+        throw new Error(`HTTP Error: ${response.status} - ${response.statusText}`);
+      }
+
+      const data: LinePriceFeedItem[] = await response.json();
+      return {
+        tokenAddress,
+        tokenName,
+        priceFeed: data,
+      };
+    } catch (error) {
+      console.error(`Error fetching price feed for token ${tokenName}:`, error);
+      throw error;
+    }
+  };
+
+const fetchMultipleTokenPriceFeeds = async (tokens: { address: string; name: string }[]): Promise<TokenPriceFeed[]> => {
+  const promises = tokens.map((token) => fetchTokenPriceFeed(token.address, token.name));
+  return Promise.all(promises);
+};
+
+
+const MultipleTokenPriceFeeds = async (): Promise<string> => {
+    const priceFeeds = await fetchMultipleTokenPriceFeeds(tokens);
+    return "# Here are the token price feeds from the past three days: \n" + JSON.stringify(priceFeeds, null, 2);
+};
+
 
 export function isSwapContent(content: SwapContent): content is SwapContent {
     // Validate types
@@ -51,64 +209,18 @@ export function isSwapContent(content: SwapContent): content is SwapContent {
     return validAddresses;
 }
 
-
-export const shouldTradeTemplate =
-    `# Task: Decide whether {{agentName}} should make any swap or stay idle.
-
-Based on the market data and the wallet informations, is it interesting to make any swap? YES or NO
-
-{{providers}}
-
-Is it interesting for {{agentName}} to make any swap? ` + booleanFooter;
-
-const swapTemplate = `
-{{knowledge}}
-
-{{providers}}
-
-Based on the market data you have, as well as your wallet informations (and any other relevant data), choose which swap is the most profitable to make and present it in the form of a response.
-To avoid issues related to fees, the ETH balance must never drop below 0.002 ETH.
-If you feel that you're getting close to this limit, don't hesitate to buy more ETH.
-
-Respond with a JSON markdown block.
-
-Example response format (strictly follow this format):
-\`\`\`json
-{
-    "sellTokenAddress": "0x049d36570d4e46f48e99674bd3fcc84644ddd6b96f7c741b1562b82f9e004dc7",
-    "buyTokenAddress": "0x124aeb495b947201f5fac96fd1138e326ad86195b98df6dec9009158a533b49",
-    "sellAmount": "1000000000000000000"
+async function getCurrentNews(searchTerm : string){
+    const apiKey = "1809642513d84b009fe12de73a3af77f";
+    const response = await fetch(`https://newsapi.org/v2/everything?q=${searchTerm}&apiKey=${apiKey}`);
+    const data = await response.json();
+    return data.articles.slice(0, 5).map(article => `${article.title}\n${article.description}\n${article.url}\n${article.content.slice(0,1000)}`).join("\n\n");
 }
-\`\`\`
 
-Here are the token addresses available for you to use in your response :
-
-- BROTHER/brother/$brother: 0x03b405a98c9e795d427fe82cdeeeed803f221b52471e3a757574a2b4180793ee
-- BTC/btc: 0x03fe2b97c1fd336e750087d68b9b867997fd64a2661ff3ca5a7c771641e8e7ac
-- ETH/eth: 0x049d36570d4e46f48e99674bd3fcc84644ddd6b96f7c741b1562b82f9e004dc7
-- STRK/strk: 0x04718f5a0fc34cc1af16a1cdee98ffb20c31f5cd61d6ab07201858f4287c938d
-- LORDS/lords: 0x0124aeb495b947201f5fac96fd1138e326ad86195b98df6dec9009158a533b49
-- USDT/usdt: 0x68f5c6a61780768455de69077e07e89787839bf8166decfbf92b645209c0fb8
-- USDC/usdc: 0x53c91253bc9682c04929ca02ed00b3e423f6710d2ee7e0d5ebb06f3ecf368a8
-- wstETH: 0x42b8f0484674ca266ac5d08e4ac6a3fe65bd3129795def2dca5c34ecc5f96d2
-- WBTC/wbtc: 0x3fe2b97c1fd336e750087d68b9b867997fd64a2661ff3ca5a7c771641e8e7ac
-- UNI/uni: 0x49210ffc442172463f3177147c1aeaa36c51d152c1b0630f2364c300d4f48ee
-- DAI/dai: 0x5574eb6b8789a91466f902c380d978e472db68170ff82a5b650b95a58ddf4ad
-- rETH: 0x319111a5037cbec2b3e638cc34a3474e2d2608299f3e62866e9cc683208c610
-- LUSD/lusd: 0x70a76fd48ca0ef910631754d77dd822147fe98a569b826ec85e3c33fde586ac
-- xSTRK: 0x28d709c875c0ceac3dce7065bec5328186dc89fe254527084d1689910954b0a
-- NSTR/nstr: 0xc530f2c0aa4c16a0806365b0898499fba372e5df7a7172dc6fe9ba777e8007
-- ZEND/zend: 0x585c32b625999e6e5e78645ff8df7a9001cf5cf3eb6b80ccdd16cb64bd3a34
-- SWAY/sway: 0x4878d1148318a31829523ee9c6a5ee563af6cd87f90a30809e5b0d27db8a9b
-- SSTR/sstr: 0x102d5e124c51b936ee87302e0f938165aec96fb6c2027ae7f3a5ed46c77573b
+const tokenInfos = await MultipleTokenInfos();
+const tokenPrices = await MultipleTokenPriceFeeds();
 
 
 
-To summarize, your response must include:
-- Sell token address
-- Buy token address
-- Amount to sell (in wei)
-`;
 
 export const tradeAction: Action = {
     name: "EXECUTE_STARKNET_TRADE",
@@ -138,11 +250,32 @@ export const tradeAction: Action = {
             state = await runtime.updateRecentMessageState(state);
         }
 
-        async function _shouldTrade(state: State): Promise<boolean> {
+        const searchTerm = 'Bitcoin OR Ethereum market sentiment AND institutional investments';
+
+        const BrutCurrentNews = await getCurrentNews(searchTerm);
+
+        const currentNewsContext = `Respond by providing a summary of the following current news. This summary will be included in an LLM prompt.
+        The current News :
+        ${BrutCurrentNews}
+`;
+
+        const news = await generateText({
+            runtime: runtime,
+            context : currentNewsContext,
+            modelClass: ModelClass.SMALL,
+            stop: ["\n"],
+
+        })
+
+        const CurrentNews =
+            "# Here are some news updates regarding Bitcoin or Ethereum market sentiment and institutional investments:\n" +
+            news;
+
+        async function _shouldTrade(state: State, analyse): Promise<boolean> {
             // If none of the above conditions are met, use the generateText to decide
             const shouldTradeContext = composeContext({
                 state,
-                template: shouldTradeTemplate,
+                template: analyse,
             });
 
             const response = await generateTrueOrFalse({
@@ -154,75 +287,139 @@ export const tradeAction: Action = {
             return response;
         }
 
-        const shouldTrade = await _shouldTrade(state);
+        const shouldTradeTemplate =
+`# Task: Decide whether you should make any swap or stay idle and provide a response.
 
-        if (shouldTrade){
-            const swapContext = composeContext({
-                state,
-                template: swapTemplate,
-            });
+You are a degen trader and a risk enthusiast. Your goal is to make very short-term profits with your trades.
 
-            const response = await generateObjectDeprecated({
-                runtime,
-                context: swapContext,
-                modelClass: ModelClass.MEDIUM,
-            });
+Based on the market data, wallet information and some last news, decide if it's interesting to make a swap.
 
-            console.log("Response:", response);
-            elizaLogger.debug("Response:", response);
+⚠️ **Strict Response Format (JSON only):**
+Do not add any extra text before or after the JSON block. Follow the structure exactly.
 
-            if (!isSwapContent(response)) {
-                callback?.({ text: "Invalid swap content, please try again." });
-                return false;
+### ✅ If the answer is **YES**, respond exactly like this:
+\`\`\`json
+{
+  "shouldTrade": "yes",
+  "swap": {
+    "sellTokenAddress": "[The address of the token you are selling]",
+    "buyTokenAddress": "[The address of the token you are buying]",
+    "sellAmount": "[The amount to sell in wei]"
+  },
+  "Explanation": "[Brief explanation of why you made this decision]",
+  "Tweet": "[The tweet you would post after this trade as a big degen and being very trash]"
+}
+\`\`\`
+
+
+### ❌ If the answer is NO, respond exactly like this:
+
+\`\`\`json
+{
+  "shouldTrade": "no",
+  "swap": {
+    "sellTokenAddress": "null",
+    "buyTokenAddress": "null",
+    "sellAmount": "null"
+  },
+  "Explanation": "null",
+  "Tweet": "null"
+}
+\`\`\`
+
+### ⚠️ Rules:
+
+- Only reply with the JSON block.
+- "shouldTrade" must strictly be "yes" or "no".
+- Do not add any extra explanation or text.
+- Ensure JSON syntax is correct (commas, quotes, etc.).
+
+\n\n
+{{{providers}}}` + CurrentNews+ "\n\n And \n\n" + tokenInfos + "\n\n And \n\n" +tokenPrices;
+;
+
+        const shouldTradeContext = composeContext({
+            state,
+            template: shouldTradeTemplate,
+        });
+
+
+        const response = await generateText({
+            context: shouldTradeContext,
+            modelClass: ModelClass.MEDIUM,
+            runtime,
+        });
+
+        console.log(response);
+        callback({text : response});
+
+        try {
+            const parsedDecision: TradeDecision = JSON.parse(response);
+            const swap = parsedDecision.swap;
+            console.log("Should we trade:", parsedDecision.shouldTrade);
+            console.log("Token to sell:", swap.sellTokenAddress);
+            console.log("Token to buy:", swap.buyTokenAddress);
+            console.log("Amount:", swap.sellAmount);
+            console.log("Explanation:", parsedDecision.Explanation);
+            console.log("Tweet:", parsedDecision.Tweet);
+
+            if (parsedDecision.shouldTrade === "yes"){
+                if (!isSwapContent(swap)) {
+                            callback?.({ text: "Invalid swap content, please try again." });
+                            return false;
+                }
+                elizaLogger.log("ooookkkkk 999999");
+                try {
+                    elizaLogger.log("ooookkkkk 00000");
+                    callback?.({ text: "OOOOOOOOOOOOKKKK 00000." });
+                    elizaLogger.log("buyTokenaddress : " + swap.buyTokenAddress);
+                    elizaLogger.log("sellAmount : " + swap.sellAmount);
+                    elizaLogger.log("sellTokenAddress : " + swap.sellTokenAddress);
+                    // Get quote
+                    const quoteParams: QuoteRequest = {
+                        sellTokenAddress: swap.sellTokenAddress,
+                        buyTokenAddress: swap.buyTokenAddress,
+                        sellAmount: BigInt(swap.sellAmount),
+                    };
+                    const quote = await fetchQuotes(quoteParams);
+                    callback?.({ text: "OOOOOOOOOOOOKKKK 1111." });
+                    elizaLogger.log("ooookkkkk 11111111111");
+                    //getStarknetAccount(runtime);
+                    elizaLogger.log("get starknet account OKKKK");
+                    // Execute swap
+                    const swapResult = await executeAvnuSwap(
+                        getStarknetAccount(runtime),
+                        quote[0],
+                        {
+                            slippage: 0.05, // 5% slippage
+                            executeApprove: true,
+                        }
+                    );
+                    elizaLogger.log(
+                        "Swap completed successfully! tx: " + swapResult.transactionHash
+                    );
+                    callback?.({
+                        text:
+                            "Swap completed successfully! tx: " +
+                            swapResult.transactionHash,
+                    });
+                    return true;
+                } catch (error) {
+                    console.log("Error during token swap:", error);
+                    callback?.({ text: `Error during swap:` });
+                    return false;
+                }
+            }else{
+                console.log("It is not relevant to trade at the moment.");
+                callback?.({ text: "It is not relevant to trade at the moment." });
             }
-            elizaLogger.log("ooookkkkk 999999");
-            try {
-                elizaLogger.log("ooookkkkk 00000");
-                callback?.({ text: "OOOOOOOOOOOOKKKK 00000." });
-                elizaLogger.log("buyTokenaddress : " + response.buyTokenAddress);
-                elizaLogger.log("sellAmount : " + response.sellAmount);
-                elizaLogger.log("sellTokenAddress : " + response.sellTokenAddress);
-                // Get quote
-                const quoteParams: QuoteRequest = {
-                    sellTokenAddress: response.sellTokenAddress,
-                    buyTokenAddress: response.buyTokenAddress,
-                    sellAmount: BigInt(response.sellAmount),
-                };
 
-                const quote = await fetchQuotes(quoteParams);
-                callback?.({ text: "OOOOOOOOOOOOKKKK 1111." });
-                elizaLogger.log("ooookkkkk 11111111111");
-                //getStarknetAccount(runtime);
-                elizaLogger.log("get starknet account OKKKK");
-                // Execute swap
-                const swapResult = await executeAvnuSwap(
-                    getStarknetAccount(runtime),
-                    quote[0],
-                    {
-                        slippage: 0.05, // 5% slippage
-                        executeApprove: true,
-                    }
-                );
-
-                elizaLogger.log(
-                    "Swap completed successfully! tx: " + swapResult.transactionHash
-                );
-                callback?.({
-                    text:
-                        "Swap completed successfully! tx: " +
-                        swapResult.transactionHash,
-                });
-
-                return true;
-            } catch (error) {
-                console.log("Error during token swap:", error);
-                callback?.({ text: `Error during swap:` });
-                return false;
-            }
-        }else{
-            console.log("It is not relevant to trade at the moment.");
-            callback?.({ text: "It is not relevant to trade at the moment." });
+        } catch (error) {
+          console.error("Erreur de parsing JSON :", error);
+          return null;
         }
+    return true;
+
     },
     examples: [] as ActionExample[][],
 } as Action;

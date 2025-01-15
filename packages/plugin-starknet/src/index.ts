@@ -27,7 +27,7 @@ export const starknetPlugin: Plugin = {
     description: "Starknet Plugin for Eliza",
     actions: [tradeAction],
     evaluators: [],
-    providers: [walletBalancesProvider, marketInfosProvider],
+    providers: [walletBalancesProvider],
 };
 
 export default starknetPlugin;

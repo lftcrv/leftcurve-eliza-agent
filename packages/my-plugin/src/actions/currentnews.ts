@@ -16,7 +16,6 @@ async function getCurrentNews(searchTerm : string){
     const response = await fetch(`https://newsapi.org/v2/everything?q=${searchTerm}&apiKey=${apiKey}`);
     const data = await response.json();
     return data.articles.slice(0, 5).map(article => `${article.title}\n${article.description}\n${article.url}\n${article.content.slice(0,1000)}`).join("\n\n");
-    //return data;
 }
 
 export const currentNewsAction: Action = {
@@ -50,11 +49,26 @@ export const currentNewsAction: Action = {
 
         const CurrentNews = await getCurrentNews(searchTerm);
 
+
+        const currentNewsContext = `Respond by providing a summary of the following current news. This summary will be included in an LLM prompt.
+        The current News :
+        ${CurrentNews}
+`;
+
+        const response = await generateText({
+            runtime: _runtime,
+            context : currentNewsContext,
+            modelClass: ModelClass.SMALL,
+            stop: ["\n"],
+
+        })
+
+
         const responseText =
             "The current news for the search term " +
             searchTerm +
             " is " +
-            CurrentNews;
+            response;
 
         const newMemory: Memory = {
             userId: _message.agentId,

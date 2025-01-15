@@ -50,7 +50,7 @@ EXECUTE_STARKNET_TRADE: Perform a token swap on starknet. Use this action when a
         The user's message is:
         "${message.content.text}"
 
-        Only respond with a JSON object containing these parameters in the format:
+        Only respond with a JSON object containing these parameters in the format (dont use the markdown notation):
         {
             "actionName": "ACTION_NAME",
             "actionParams": { /* parameters */ },
@@ -76,8 +76,10 @@ EXECUTE_STARKNET_TRADE: Perform a token swap on starknet. Use this action when a
     });
 
     let params;
+    console.log(extractedParams);
     try {
         params = JSON.parse(extractedParams);
+        console.log("parsing okkkkkkkkkkk");
         if (!params.actionName || !params.interval || !params.duration) {
             throw new Error("Missing required parameters.");
         }
@@ -92,7 +94,6 @@ EXECUTE_STARKNET_TRADE: Perform a token swap on starknet. Use this action when a
         throw new Error(`Action "${actionName}" not found`);
     }
 
-    // Générer un message minimal si aucun paramètre n'est requis
     const clonedMessage = {
         userId: message.userId,
         agentId: runtime.agentId,

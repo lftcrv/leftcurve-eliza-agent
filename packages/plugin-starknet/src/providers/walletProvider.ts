@@ -28,7 +28,7 @@ const TOKENS = {
     SST: "0x102d5e124c51b936ee87302e0f938165aec96fb6c2027ae7f3a5ed46c77573b"
 };
 
-// 3️⃣ ABI ERC20 standard
+
 const ERC20_ABI = [
     {
         "inputs": [{"name": "account", "type": "felt"}],
@@ -39,10 +39,9 @@ const ERC20_ABI = [
     }
 ];
 
-// 4️⃣ Adresse de ton wallet Braavos
 const WALLET_ADDRESS = "0x063ebcee50c3e71434889faf18ed5ad5424cfd9ae16d96b395e809792c2121cd";
 
-// 5️⃣ Fonction pour lire la balance d'un token
+
 async function getTokenBalance(tokenName, tokenAddress) {
     try {
         const contract = new Contract(ERC20_ABI, tokenAddress, provider);
@@ -56,7 +55,6 @@ async function getTokenBalance(tokenName, tokenAddress) {
     }
 }
 
-// 6️⃣ Lire toutes les balances des tokens et retourner un string global
 async function getAllBalances() {
     const balances = await Promise.all(
         Object.entries(TOKENS).map(([tokenName, tokenAddress]) =>
