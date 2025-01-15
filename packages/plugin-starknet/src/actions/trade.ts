@@ -335,7 +335,7 @@ Do not add any extra text before or after the JSON block. Follow the structure e
 - Ensure JSON syntax is correct (commas, quotes, etc.).
 
 \n\n
-{{{providers}}}` + CurrentNews+ "\n\n And \n\n" + tokenInfos + "\n\n And \n\n" +tokenPrices;
+{{{providers}}}` + CurrentNews + "\n\n And \n\n" + tokenInfos + "\n\n And \n\n" +tokenPrices;
 ;
 
         const shouldTradeContext = composeContext({
