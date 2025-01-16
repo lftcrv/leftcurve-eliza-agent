@@ -150,7 +150,7 @@ const MultipleTokenInfos = async () => {
 
 
 const fetchTokenPriceFeed = async (tokenAddress: string, tokenName: string): Promise<TokenPriceFeed> => {
-    const url = `https://starknet.impulse.avnu.fi/v1/tokens/${tokenAddress}/prices/line?resolution=1H`;
+    const url = `https://starknet.impulse.avnu.fi/v1/tokens/${tokenAddress}/prices/line?resolution=1D`;
 
     try {
       const response = await fetch(url, {
@@ -293,6 +293,8 @@ export const tradeAction: Action = {
 {{{bio}}}
 
 Based on the market data, wallet information and some last news, decide if it's interesting to make a swap.
+
+Warning: To avoid fee issues, always ensure you have at least 0.0016 ETH and 12 STRK.
 
 ⚠️ **Strict Response Format (JSON only):**
 Do not add any extra text before or after the JSON block. Follow the structure exactly.
