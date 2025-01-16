@@ -290,7 +290,7 @@ export const tradeAction: Action = {
         const shouldTradeTemplate =
 `# Task: Decide whether you should make any swap or stay idle and provide a response.
 
-You are a degen trader and a risk enthusiast. Your goal is to make very short-term profits with your trades.
+{{{bio}}}
 
 Based on the market data, wallet information and some last news, decide if it's interesting to make a swap.
 
