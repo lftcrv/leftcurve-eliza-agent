@@ -309,7 +309,9 @@ export const tradeAction: Action = {
 
 {{{bio}}}
 
-Based on the market data, your wallet balances and some last news, decide if it's interesting to make a swap.
+Based on the market data, wallet information and some last news, decide if it's interesting to make a swap.
+
+Warning: To avoid fee issues, always ensure you have at least 0.0016 ETH.
 
 ⚠️ **Strict Response Format (JSON only):**
 Do not add any extra text before or after the JSON block. Follow the structure exactly.
@@ -387,10 +389,7 @@ Warning: To avoid fee issues, always ensure you have at least 0.0016 ETH and 4 S
                             callback?.({ text: "Invalid swap content, please try again." });
                             return false;
                 }
-                elizaLogger.log("ooookkkkk 999999");
                 try {
-                    elizaLogger.log("ooookkkkk 00000");
-                    callback?.({ text: "OOOOOOOOOOOOKKKK 00000." });
                     elizaLogger.log("buyTokenaddress : " + swap.buyTokenAddress);
                     elizaLogger.log("sellAmount : " + swap.sellAmount);
                     elizaLogger.log("sellTokenAddress : " + swap.sellTokenAddress);
@@ -401,8 +400,6 @@ Warning: To avoid fee issues, always ensure you have at least 0.0016 ETH and 4 S
                         sellAmount: BigInt(swap.sellAmount),
                     };
                     const quote = await fetchQuotes(quoteParams);
-                    callback?.({ text: "OOOOOOOOOOOOKKKK 1111." });
-                    elizaLogger.log("ooookkkkk 11111111111");
                     //getStarknetAccount(runtime);
                     elizaLogger.log("get starknet account OKKKK");
                     // Execute swap

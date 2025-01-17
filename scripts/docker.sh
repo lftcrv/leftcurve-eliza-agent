@@ -22,9 +22,9 @@ case "$1" in
         # Define base directories to mount
         BASE_MOUNTS=(
             "characters:/app/characters"
-            ".env:/app/.env"
+            # ".env:/app/.env"
             "agent:/app/agent"
-            "docs:/app/docs"
+            # "docs:/app/docs"
             "scripts:/app/scripts"
         )
 
@@ -36,17 +36,19 @@ case "$1" in
             "adapter-supabase"
             "client-auto"
             "client-direct"
-            "client-discord"
-            "client-farcaster"
-            "client-telegram"
+            # "client-discord"
+            # "client-farcaster"
+            # "client-telegram"
             "client-twitter"
             "core"
+            "my-plugin"
+            "plugin-starknet"
             "plugin-bootstrap"
             "plugin-image-generation"
             "plugin-node"
-            "plugin-solana"
-            "plugin-evm"
-            "plugin-tee"
+            # "plugin-solana"
+            # "plugin-evm"
+            # "plugin-tee"
         )
 
         # Start building the docker run command
