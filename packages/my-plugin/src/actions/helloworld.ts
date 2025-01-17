@@ -34,7 +34,13 @@ export const helloWorldAction: Action = {
         _callback({
             text : helloworld,
         })
-        console.log("ITS WORKING : ", _message.content.text);
+        //console.log("!!!!!!!!!!!!_message.content.text!!!!!!!!!!!! : ", _message.content.text);
+        console.log("!!!!!!!!!!!!AGENTIDDDDDD!!!!!!!!!!!! : ", _state.agentId);
+
+
+
+
+
         return true;
     },
     examples: [
