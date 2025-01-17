@@ -310,7 +310,6 @@ export const tradeAction: Action = {
 {{{bio}}}
 
 Based on the market data, your wallet balances and some last news, decide if it's interesting to make a swap.
-You are a trader and you love risky swaps
 
 ⚠️ **Strict Response Format (JSON only):**
 Do not add any extra text before or after the JSON block. Follow the structure exactly.
