@@ -111,14 +111,14 @@ const tokens = [
     { address: "0x102d5e124c51b936ee87302e0f938165aec96fb6c2027ae7f3a5ed46c77573b", name: "SSTR", decimals: 18},
   ];
 
-function convertSellAmount(swap: Swap): number | null {
-  const token = tokens.find(t => t.address.toLowerCase() === swap.sellTokenAddress.toLowerCase());
+function convertAmountFromDecimals(address: string, amount: BigInt): number | null {
+  const token = tokens.find(t => t.address.toLowerCase() === address.toLowerCase());
   if (!token) {
-    console.error("Token not found for address:", swap.sellTokenAddress);
+    console.error("Token not found for address:", address);
     return null;
   }
   const decimals = token.decimals;
-  const sellAmount = swap.sellAmount;
+  const sellAmount = amount;
   const result = Number(sellAmount) / 10 ** decimals;
   return result;
 }
@@ -310,6 +310,7 @@ export const tradeAction: Action = {
 {{{bio}}}
 
 Based on the market data, your wallet balances and some last news, decide if it's interesting to make a swap.
+You are a trader and you love risky swaps
 
 ⚠️ **Strict Response Format (JSON only):**
 Do not add any extra text before or after the JSON block. Follow the structure exactly.
@@ -323,7 +324,7 @@ Do not add any extra text before or after the JSON block. Follow the structure e
     "buyTokenAddress": "[The address of the token you are buying]",
     "sellAmount": "[The amount to sell in wei]"
   },
-  "Explanation": "[Brief explanation of why you made this decision]",
+  "Explanation": "[Brief explanation of why you made this decision. Write with your personality]",
   "Tweet": "[The tweet you would post after this trade as a big degen and being very trash]"
 }
 \`\`\`
@@ -351,10 +352,10 @@ Do not add any extra text before or after the JSON block. Follow the structure e
 - Do not add any extra explanation or text.
 - Ensure JSON syntax is correct (commas, quotes, etc.).
 
-Warning: To avoid fee issues, always ensure you have at least 0.0016 ETH and 12 STRK.
+Warning: To avoid fee issues, always ensure you have at least 0.0016 ETH and 4 STRK.
 
 \n\n
-` + CurrentNews + "\n\n And \n\n" + tokenInfos + "\n\n And \n\n" +tokenPrices + "{{{providers}}}";
+` + CurrentNews + "\n\n And \n\n" + tokenInfos + "\n\n And \n\n" +tokenPrices + `{{{providers}}}`;
 ;
 
         const shouldTradeContext = composeContext({
@@ -426,15 +427,10 @@ Warning: To avoid fee issues, always ensure you have at least 0.0016 ETH and 12 
                     const sellTokenName = tokens.find(t => t.address.toLowerCase() === swap.sellTokenAddress.toLowerCase()).name;
                     const buyTokenName = tokens.find(t => t.address.toLowerCase() === swap.buyTokenAddress.toLowerCase()).name;
                     const message =
-                    `{"agentId": ${state.agentId}, "tradeId": ${swapResult.transactionHash},
-                    trade:
-                     {"sellTokenName": ${sellTokenName}, "sellTokenAddress" : ${swap.sellTokenAddress},
-                     "buyTokenName": ${buyTokenName}, "buyTokenAddress" : ${swap.buyTokenAddress},
-                     "sellAmount": ${convertSellAmount(swap)}, "buyAmount": ${quote[0].buyAmount}
-                    }}`;
+                    `{"agentId": ${state.agentId}, "tradeId": ${swapResult.transactionHash},trade: {"sellTokenName": "${sellTokenName}", "sellTokenAddress" : ${swap.sellTokenAddress}, "buyTokenName": "${buyTokenName}", "buyTokenAddress" : ${swap.buyTokenAddress}, "sellAmount": ${convertAmountFromDecimals(swap.sellTokenAddress, BigInt(swap.sellAmount))}, "buyAmount": ${convertAmountFromDecimals(swap.buyTokenAddress, quote[0].buyAmount)}, "tradePriceUSD": ${quote[0].buyTokenPriceInUsd}, "explanation": "${parsedDecision.Explanation}"}}`;
 
                     console.log(message);
-                    axios.post('http://localhost:5000', { message: 'Hello from TS!' }, {
+                    axios.post('http://localhost:5000', { message: message }, {
                       headers: { 'Content-Type': 'application/json', 'API_KEY_VALUE': BACKEND_API_KEY }
                     }).then(res => console.log(res.data))
                       .catch(err => console.error(err));
@@ -457,5 +453,29 @@ Warning: To avoid fee issues, always ensure you have at least 0.0016 ETH and 12 
     return true;
 
     },
-    examples: [] as ActionExample[][],
+    examples: [
+        [
+            {
+                user: "{{user1}}",
+                content: {
+                    text: "Execute EXECUTE_STARKNET_TRADE",
+                },
+            },
+            {
+                user: "{{agent}}",
+                content: { text: "", action: "HELLO_WORLD" },
+            },
+        ],
+        [
+            {
+                user: "{{user1}}",
+                content: {
+                    text: "Trade",
+                },
+            },
+            {
+                user: "{{agent}}",
+                content: { text: "", action: "HELLO_WORLD" },
+            },
+        ]] as ActionExample[][],
 } as Action;
