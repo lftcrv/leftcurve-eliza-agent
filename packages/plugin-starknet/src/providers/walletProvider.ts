@@ -1,5 +1,7 @@
 import { IAgentRuntime, Memory, Provider, State } from "@ai16z/eliza";
 import { RpcProvider, Contract } from "starknet";
+import * as dotenv from "dotenv";
+dotenv.config();
 
 // 1️⃣ Connexion au réseau **Mainnet**
 const provider = new RpcProvider({
@@ -8,7 +10,8 @@ const provider = new RpcProvider({
 
 // 2️⃣ Adresse des contrats
 const TOKENS = {
-    BROTHER: "0x03b405a98c9e795d427fe82cdeeeed803f221b52471e3a757574a2b4180793ee",
+    BROTHER:
+        "0x03b405a98c9e795d427fe82cdeeeed803f221b52471e3a757574a2b4180793ee",
     BTC: "0x03fe2b97c1fd336e750087d68b9b867997fd64a2661ff3ca5a7c771641e8e7ac",
     ETH: "0x49d36570d4e46f48e99674bd3fcc84644ddd6b96f7c741b1562b82f9e004dc7",
     STRK: "0x4718f5a0fc34cc1af16a1cdee98ffb20c31f5cd61d6ab07201858f4287c938d",
@@ -25,28 +28,27 @@ const TOKENS = {
     NSTR: "0xc530f2c0aa4c16a0806365b0898499fba372e5df7a7172dc6fe9ba777e8007",
     ZEND: "0x585c32b625999e6e5e78645ff8df7a9001cf5cf3eb6b80ccdd16cb64bd3a34",
     SWAY: "0x4878d1148318a31829523ee9c6a5ee563af6cd87f90a30809e5b0d27db8a9b",
-    SST: "0x102d5e124c51b936ee87302e0f938165aec96fb6c2027ae7f3a5ed46c77573b"
+    SST: "0x102d5e124c51b936ee87302e0f938165aec96fb6c2027ae7f3a5ed46c77573b",
 };
-
 
 const ERC20_ABI = [
     {
-        "inputs": [{"name": "account", "type": "felt"}],
-        "name": "balanceOf",
-        "outputs": [{"name": "balance", "type": "felt"}],
-        "stateMutability": "view",
-        "type": "function"
-    }
+        inputs: [{ name: "account", type: "felt" }],
+        name: "balanceOf",
+        outputs: [{ name: "balance", type: "felt" }],
+        stateMutability: "view",
+        type: "function",
+    },
 ];
-
-const WALLET_ADDRESS = "0x063ebcee50c3e71434889faf18ed5ad5424cfd9ae16d96b395e809792c2121cd";
-
 
 async function getTokenBalance(tokenName, tokenAddress) {
     try {
+        const WALLET_ADDRESS = process.env.STARKNET_ADDRESS;
         const contract = new Contract(ERC20_ABI, tokenAddress, provider);
         const balanceCall = await contract.call("balanceOf", [WALLET_ADDRESS]);
-        const balanceInWei = BigInt((balanceCall as { balance: string }).balance);
+        const balanceInWei = BigInt(
+            (balanceCall as { balance: string }).balance
+        );
         const balanceInToken = Number(balanceInWei) / 1e18;
 
         return `${tokenName}: ${balanceInToken} ${tokenName}`;
@@ -61,18 +63,17 @@ async function getAllBalances() {
             getTokenBalance(tokenName, tokenAddress)
         )
     );
-    const resultString = balances.join('\n');
+    const resultString = balances.join("\n");
     return resultString;
 }
 
 const walletBalancesProvider: Provider = {
     get: async (_runtime: IAgentRuntime, _message: Memory, _state?: State) => {
-
         try {
-            const balances = await getAllBalances()
-            return "Here are the balances of your wallet.\n" + balances ;
+            const balances = await getAllBalances();
+            return "Here are the balances of your wallet.\n" + balances;
         } catch (error) {
-            console.error('Erreur:', error);
+            console.error("Erreur:", error);
             throw error;
         }
     },
