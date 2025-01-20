@@ -13,14 +13,13 @@ export const helloWorldAction: Action = {
     validate: async (_runtime: IAgentRuntime, _message: Memory) => {
         return true;
     },
-    description:
-        "Make a cool Hello World ASCII art.",
+    description: "Make a cool Hello World ASCII art.",
     handler: async (
         _runtime: IAgentRuntime,
         _message: Memory,
         _state: State,
         _options: { [key: string]: unknown },
-        _callback: HandlerCallback,
+        _callback: HandlerCallback
     ): Promise<boolean> => {
         const helloworld = `
         !!!!!!!!!!! This is definitivly workiiiing !!!!!
@@ -32,14 +31,9 @@ export const helloWorldAction: Action = {
                             |/
 `;
         _callback({
-            text : helloworld,
-        })
+            text: helloworld,
+        });
         //console.log("!!!!!!!!!!!!_message.content.text!!!!!!!!!!!! : ", _message.content.text);
-        console.log("!!!!!!!!!!!!AGENTIDDDDDD!!!!!!!!!!!! : ", _state.agentId);
-
-
-
-
 
         return true;
     },
@@ -94,5 +88,5 @@ export const helloWorldAction: Action = {
                 content: { text: "", action: "HELLO_WORLD" },
             },
         ],
-    ] as ActionExample[][]
+    ] as ActionExample[][],
 } as Action;
