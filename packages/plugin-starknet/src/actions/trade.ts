@@ -52,10 +52,10 @@ function convertAmountFromDecimals(
 
 const MultipleTokenInfos = async () => {
     try {
-        const tokenDetails = await fetchMultipleTokenDetails(tokens);
+        const tokenDetailsEssentials = await fetchMultipleTokenDetails(tokens);
         return (
             "# Here is some information about the market :\n" +
-            JSON.stringify(tokenDetails, null, 2)
+            JSON.stringify(tokenDetailsEssentials, null, 2)
         );
     } catch (error) {
         console.error("Error fetching detailed token information:", error);

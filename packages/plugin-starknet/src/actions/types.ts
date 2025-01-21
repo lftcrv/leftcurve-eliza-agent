@@ -26,6 +26,22 @@ export interface TokenDetails {
     tags: string[];
 }
 
+interface FilteredMarketInfo {
+    currentPrice: number;
+    starknetVolume24h: number;
+    priceChangePercentage: {
+        "1h": number;
+        "24h": number;
+        "7d": number;
+    };
+}
+
+export interface TokenDetailsEssentials {
+    name: string;
+    symbol: string;
+    market: FilteredMarketInfo;
+}
+
 export interface SwapContent {
     sellTokenAddress: string;
     buyTokenAddress: string;

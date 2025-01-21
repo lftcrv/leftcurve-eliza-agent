@@ -1,5 +1,5 @@
 import { IAgentRuntime, Memory, Provider, State } from "@ai16z/eliza";
-import { TokenDetails } from "../actions/types";
+import { TokenDetailsEssentials } from "../actions/types";
 
 interface LinePriceFeedItem {
     date: string;
@@ -56,9 +56,9 @@ export const fetchMultipleTokenPriceFeeds = async (
     return Promise.all(promises);
 };
 
-const fetchTokenDetails = async (
+const fetchTokenDetailsEssentials = async (
     tokenAddress: string
-): Promise<TokenDetails> => {
+): Promise<TokenDetailsEssentials> => {
     const url = `https://starknet.impulse.avnu.fi/v1/tokens/${tokenAddress}`;
 
     try {
@@ -76,10 +76,22 @@ const fetchTokenDetails = async (
         }
 
         const data = await response.json();
+        // Filter and restructure the data
+        const filteredData: TokenDetailsEssentials = {
+            name: data.name,
+            symbol: data.symbol,
+            market: {
+                currentPrice: data.market.currentPrice,
+                starknetVolume24h: data.market.starknetVolume24h,
+                priceChangePercentage: {
+                    "1h": data.market.priceChangePercentage1h,
+                    "24h": data.market.priceChangePercentage24h,
+                    "7d": data.market.priceChangePercentage7d,
+                },
+            },
+        };
 
-        const { logoUri, ...filteredData } = data; // TODO: why not putting logo uri?
-
-        return filteredData as TokenDetails;
+        return filteredData as TokenDetailsEssentials;
     } catch (error) {
         console.error(
             `Error fetching details for token ${tokenAddress}:`,
@@ -91,8 +103,10 @@ const fetchTokenDetails = async (
 
 export const fetchMultipleTokenDetails = async (
     tokens: { address: string; name: string }[]
-): Promise<TokenDetails[]> => {
-    const promises = tokens.map((token) => fetchTokenDetails(token.address));
+): Promise<TokenDetailsEssentials[]> => {
+    const promises = tokens.map((token) =>
+        fetchTokenDetailsEssentials(token.address)
+    );
     return Promise.all(promises);
 };
 
