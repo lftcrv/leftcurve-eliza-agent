@@ -1,28 +1,46 @@
-import { Provider, IAgentRuntime, Memory, State } from "@elizaos/core";
+import {
+    Provider,
+    IAgentRuntime,
+    Memory,
+    State,
+    elizaLogger,
+} from "@elizaos/core";
+import { ParadexState } from "../types";
 
 export const marketDataProvider: Provider = {
-    get: async (runtime: IAgentRuntime, message: Memory, state?: State) => {
+    get: async (
+        runtime: IAgentRuntime,
+        message: Memory,
+        state?: State & ParadexState
+    ) => {
         console.log("Starting marketDataProvider.get...");
         try {
-            console.log("Fetching markets data...");
-            const response = await fetch("https://api.testnet.paradex.trade/v1/markets", {
-                headers: { 'Accept': 'application/json' }
-            });
+            const response = await fetch(
+                "https://api.testnet.paradex.trade/v1/markets",
+                {
+                    headers: { Accept: "application/json" },
+                }
+            );
 
             if (!response.ok) {
-                throw new Error(`API request failed: ${response.status} ${response.statusText}`);
+                throw new Error(`API request failed: ${response.status}`);
             }
 
             const data = await response.json();
             const markets = data.results;
-            console.log("Received markets data:", markets);
+            const marketList = `Available markets on Paradex: ${markets.map((m) => m.symbol).join(", ")}`;
+            if (state) {
+                state.marketsInfo = marketList;
+            }
 
-            return `Currently available markets on Paradex: ${
-                markets.map((m: any) => m.symbol).join(", ")
-            }`;
+            return marketList;
         } catch (error) {
             console.error("Error in marketDataProvider:", error);
-            return "Unable to fetch market data.";
+            const errorMsg = "Unable to fetch market data.";
+            if (state) {
+                state.marketsInfo = errorMsg;
+            }
+            return errorMsg;
         }
-    }
+    },
 };

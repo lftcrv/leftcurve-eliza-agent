@@ -1,4 +1,4 @@
-import { Content } from '@ai16z/eliza';
+import { Content } from "@ai16z/eliza";
 
 export interface ParadexConfig {
     baseUrl?: string;
