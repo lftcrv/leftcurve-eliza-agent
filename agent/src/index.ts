@@ -60,6 +60,7 @@ import fs from "fs";
 import path from "path";
 import { fileURLToPath } from "url";
 import yargs from "yargs";
+import prisma from '../../db';
 
 const __filename = fileURLToPath(import.meta.url); // get the resolved path to the file
 const __dirname = path.dirname(__filename); // get the name of the directory
@@ -473,6 +474,20 @@ export async function createAgent(
         goatPlugin = await createGoatPlugin((secret) =>
             getSecret(character, secret)
         );
+    }
+
+    //Check if prisma user already exist, if not a new user is created
+    const existingUser = await prisma.user.findUnique({
+        where: { id: character.id }
+    });
+
+    if (!existingUser) {
+        await prisma.user.create({
+            data: {
+                id: character.id,
+                wallet: { balance: 0 }
+            }
+        });
     }
 
     return new AgentRuntime({
