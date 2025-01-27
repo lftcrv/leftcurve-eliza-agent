@@ -479,6 +479,14 @@ export interface Provider {
     ) => Promise<any>;
 }
 
+export interface WatchlistEntry {
+    id: UUID;
+    room_id: UUID;
+    user_id: UUID;
+    markets: string[];
+    created_at: Date;
+}
+
 /**
  * Represents a relationship between users
  */
@@ -1000,6 +1008,14 @@ export interface IDatabaseAdapter {
     }): Promise<Relationship | null>;
 
     getRelationships(params: { userId: UUID }): Promise<Relationship[]>;
+
+    getWatchlist?: (roomId: UUID) => Promise<string[]>;
+    upsertWatchlist?: (entry: {
+        room_id: UUID;
+        user_id: UUID;
+        markets: string[];
+    }) => Promise<void>;
+    removeWatchlist?: (roomId: UUID) => Promise<void>;
 }
 
 export interface IDatabaseCacheAdapter {

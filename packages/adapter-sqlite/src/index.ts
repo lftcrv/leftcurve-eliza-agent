@@ -1,7 +1,11 @@
 export * from "./sqliteTables.ts";
 export * from "./sqlite_vec.ts";
 
-import { DatabaseAdapter, IDatabaseCacheAdapter } from "@elizaos/core";
+import {
+    DatabaseAdapter,
+    elizaLogger,
+    IDatabaseCacheAdapter,
+} from "@elizaos/core";
 import {
     Account,
     Actor,
@@ -12,7 +16,7 @@ import {
     type Relationship,
     type UUID,
 } from "@elizaos/core";
-import { Database } from "better-sqlite3";
+import { Database, Statement } from "better-sqlite3";
 import { v4 } from "uuid";
 import { load } from "./sqlite_vec.ts";
 import { sqliteTables } from "./sqliteTables.ts";
@@ -21,6 +25,51 @@ export class SqliteDatabaseAdapter
     extends DatabaseAdapter<Database>
     implements IDatabaseCacheAdapter
 {
+    private statements = new Map<string, Statement>();
+
+    private prepareStatement(sql: string): Statement {
+        let stmt = this.statements.get(sql);
+        if (!stmt) {
+            stmt = this.db.prepare(sql);
+            this.statements.set(sql, stmt);
+        }
+        return stmt;
+    }
+
+    private withTransaction<T>(operation: () => T): T {
+        try {
+            this.db.prepare("BEGIN").run();
+            const result = operation();
+            this.db.prepare("COMMIT").run();
+            return result;
+        } catch (error) {
+            this.db.prepare("ROLLBACK").run();
+            throw error;
+        }
+    }
+
+    private readonly WATCHLIST_STATEMENTS = {
+        create: `
+            CREATE TABLE IF NOT EXISTS watchlists (
+                id TEXT PRIMARY KEY,
+                room_id TEXT NOT NULL,
+                user_id TEXT NOT NULL,
+                markets TEXT NOT NULL CHECK(json_valid(markets)),
+                created_at INTEGER NOT NULL,
+                UNIQUE(room_id)
+            )
+        `,
+        get: "SELECT markets FROM watchlists WHERE room_id = ?",
+        upsert: `
+            INSERT INTO watchlists (id, room_id, user_id, markets, created_at)
+            VALUES (?, ?, ?, ?, ?)
+            ON CONFLICT(room_id) DO UPDATE SET
+                markets = excluded.markets,
+                created_at = excluded.created_at
+        `,
+        delete: "DELETE FROM watchlists WHERE room_id = ?",
+    };
+
     async getRoom(roomId: UUID): Promise<UUID | null> {
         const sql = "SELECT id FROM rooms WHERE id = ?";
         const room = this.db.prepare(sql).get(roomId) as
@@ -72,6 +121,7 @@ export class SqliteDatabaseAdapter
     constructor(db: Database) {
         super();
         this.db = db;
+        this.db.prepare(this.WATCHLIST_STATEMENTS.create).run();
         load(db);
     }
 
@@ -194,40 +244,43 @@ export class SqliteDatabaseAdapter
         // const deleteSql = `DELETE FROM memories WHERE id = ? AND type = ?`;
         // this.db.prepare(deleteSql).run(memory.id, tableName);
 
-        let isUnique = true;
+        try {
+            // Créer un embedding factice de la bonne taille si nécessaire
+            const embeddingVector = memory.embedding || Array(1536).fill(0);
+            const content = JSON.stringify(memory.content);
+            const createdAt = memory.createdAt ?? Date.now();
 
-        if (memory.embedding) {
-            // Check if a similar memory already exists
-            const similarMemories = await this.searchMemoriesByEmbedding(
-                memory.embedding,
-                {
+            // Si pas d'embedding réel, on ne fait pas de recherche de similarité
+            const isUnique =
+                !memory.embedding || memory.embedding.every((x) => x === 0);
+
+            // Insert the memory
+            const sql = `
+                    INSERT OR REPLACE INTO memories (
+                        id, type, content, embedding, userId, roomId, agentId,
+                        \`unique\`, createdAt
+                    ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)
+                `;
+
+            this.db
+                .prepare(sql)
+                .run(
+                    memory.id ?? v4(),
                     tableName,
-                    agentId: memory.agentId,
-                    roomId: memory.roomId,
-                    match_threshold: 0.95, // 5% similarity threshold
-                    count: 1,
-                }
-            );
+                    content,
+                    Buffer.from(new Float32Array(embeddingVector).buffer),
+                    memory.userId,
+                    memory.roomId,
+                    memory.agentId,
+                    isUnique ? 1 : 0,
+                    createdAt
+                );
 
-            isUnique = similarMemories.length === 0;
+            elizaLogger.success("Memory created successfully");
+        } catch (error) {
+            elizaLogger.error("Error creating memory:", error);
+            throw error;
         }
-
-        const content = JSON.stringify(memory.content);
-        const createdAt = memory.createdAt ?? Date.now();
-
-        // Insert the memory with the appropriate 'unique' value
-        const sql = `INSERT OR REPLACE INTO memories (id, type, content, embedding, userId, roomId, agentId, \`unique\`, createdAt) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)`;
-        this.db.prepare(sql).run(
-            memory.id ?? v4(),
-            tableName,
-            content,
-            new Float32Array(memory.embedding!), // Store as Float32Array
-            memory.userId,
-            memory.roomId,
-            memory.agentId,
-            isUnique ? 1 : 0,
-            createdAt
-        );
     }
 
     async searchMemories(params: {
@@ -705,6 +758,70 @@ export class SqliteDatabaseAdapter
         } catch (error) {
             console.log("Error removing cache", error);
             return false;
+        }
+    }
+
+    async getWatchlist(roomId: UUID): Promise<string[]> {
+        try {
+            elizaLogger.info(`Fetching watchlist for room ${roomId}...`);
+
+            const stmt = this.prepareStatement(this.WATCHLIST_STATEMENTS.get);
+            const result = stmt.get(roomId) as { markets: string } | undefined;
+
+            if (!result) {
+                elizaLogger.info("No watchlist found for this room");
+                return [];
+            }
+
+            const markets = JSON.parse(result.markets);
+            elizaLogger.success("Found watchlist:", markets);
+            return markets;
+        } catch (error) {
+            elizaLogger.error("Error getting watchlist:", error);
+            return [];
+        }
+    }
+
+    async upsertWatchlist(entry: {
+        room_id: UUID;
+        user_id: UUID;
+        markets: string[];
+    }): Promise<void> {
+        try {
+            elizaLogger.info("Upserting watchlist...", entry);
+
+            return this.withTransaction(() => {
+                const stmt = this.prepareStatement(
+                    this.WATCHLIST_STATEMENTS.upsert
+                );
+                stmt.run(
+                    v4(),
+                    entry.room_id,
+                    entry.user_id,
+                    JSON.stringify(entry.markets),
+                    Date.now()
+                );
+                elizaLogger.success("Watchlist saved successfully");
+            });
+        } catch (error) {
+            elizaLogger.error("Error saving watchlist:", error);
+            throw error;
+        }
+    }
+
+    async removeWatchlist(roomId: UUID): Promise<void> {
+        try {
+            elizaLogger.info(`Removing watchlist for room ${roomId}...`);
+
+            const stmt = this.prepareStatement(
+                this.WATCHLIST_STATEMENTS.delete
+            );
+            stmt.run(roomId);
+
+            elizaLogger.success("Watchlist removed successfully");
+        } catch (error) {
+            elizaLogger.error("Error removing watchlist:", error);
+            throw error;
         }
     }
 }
