@@ -42,7 +42,9 @@ Respond with a JSON markdown block containing ONLY operations from the last mess
     {"market": "ETH-USD-PERP", "type": "add"}
   ]
 }
-\`\`\``;
+\`\`\`
+
+Recent messages for context: {{recentMessages}}`;
 
 export const manageWatchlistAction: Action = {
     name: "MANAGE_WATCHLIST",
