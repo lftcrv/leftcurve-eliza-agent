@@ -245,12 +245,12 @@ export class SqliteDatabaseAdapter
         // this.db.prepare(deleteSql).run(memory.id, tableName);
 
         try {
-            // Créer un embedding factice de la bonne taille si nécessaire
+            // fake embedding if necessary
             const embeddingVector = memory.embedding || Array(1536).fill(0);
             const content = JSON.stringify(memory.content);
             const createdAt = memory.createdAt ?? Date.now();
 
-            // Si pas d'embedding réel, on ne fait pas de recherche de similarité
+            // if no real embedding, no research
             const isUnique =
                 !memory.embedding || memory.embedding.every((x) => x === 0);
 

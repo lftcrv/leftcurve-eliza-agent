@@ -51,12 +51,7 @@ export const manageWatchlistAction: Action = {
     suppressInitialMessage: true,
 
     validate: async (runtime: IAgentRuntime, message: Memory) => {
-        const text = message.content.text.toLowerCase();
-        return (
-            text.includes("watch") ||
-            text.includes("track") ||
-            text.includes("unwatch")
-        );
+        return true;
     },
 
     handler: async (
