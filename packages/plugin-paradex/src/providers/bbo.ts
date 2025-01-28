@@ -1,4 +1,10 @@
-import { Provider, IAgentRuntime, Memory, State } from "@elizaos/core";
+import {
+    Provider,
+    IAgentRuntime,
+    Memory,
+    State,
+    elizaLogger,
+} from "@elizaos/core";
 import { ParadexState } from "../types";
 
 interface BBOResponse {
@@ -16,38 +22,71 @@ export const bboProvider: Provider = {
         state?: State & ParadexState
     ) => {
         try {
-            const markets = state?.watchlist;
+            // Fetch watchlist from database
+            const watchlist = await runtime.databaseAdapter.getWatchlist(
+                message.roomId
+            );
+
+            // Initialize market metrics if not exists in state
             const marketMetrics = state?.marketMetrics || {};
             const results = [];
 
-            for (const market of markets) {
-                const response = await fetch(
-                    `https://api.testnet.paradex.trade/v1/bbo/${market}`
-                );
-                if (!response.ok) continue;
+            // Process each market from the watchlist
+            for (const market of watchlist) {
+                try {
+                    const response = await fetch(
+                        `https://api.testnet.paradex.trade/v1/bbo/${market}`
+                    );
 
-                const data: BBOResponse = await response.json();
-                const lastBid = parseFloat(data.bid);
-                const lastAsk = parseFloat(data.ask);
-                const spread = lastAsk - lastBid;
-                const spreadPercentage = (spread / lastBid) * 100;
+                    if (!response.ok) {
+                        elizaLogger.warn(
+                            `Failed to fetch BBO for market ${market}: ${response.statusText}`
+                        );
+                        continue;
+                    }
 
-                marketMetrics[market] = {
-                    spread,
-                    spreadPercentage,
-                    lastBid,
-                    lastAsk,
-                };
-                results.push(
-                    `${market}: ${lastBid}/${lastAsk} (${spreadPercentage.toFixed(2)}% spread)`
-                );
+                    const data: BBOResponse = await response.json();
+                    const lastBid = parseFloat(data.bid);
+                    const lastAsk = parseFloat(data.ask);
+                    const spread = lastAsk - lastBid;
+                    const spreadPercentage = (spread / lastBid) * 100;
+
+                    // Update market metrics in state
+                    marketMetrics[market] = {
+                        spread,
+                        spreadPercentage,
+                        lastBid,
+                        lastAsk,
+                        timestamp: Date.now(), // Add timestamp for tracking data freshness
+                    };
+
+                    results.push(
+                        `${market}: ${lastBid}/${lastAsk} (${spreadPercentage.toFixed(2)}% spread)`
+                    );
+                } catch (marketError) {
+                    elizaLogger.error(
+                        `Error processing market ${market}:`,
+                        marketError
+                    );
+                    results.push(`${market}: Failed to fetch data`);
+                }
             }
 
-            if (state) state.marketMetrics = marketMetrics;
-            return results.join("\n");
+            // Update state if provided
+            if (state) {
+                state.marketMetrics = marketMetrics;
+                state.watchlist = watchlist; // Update watchlist in state
+            }
+
+            // Return formatted results
+            if (results.length === 0) {
+                return "No markets in watchlist or unable to fetch BBO data";
+            }
+
+            return `Here are the latest BBO metrics for your watchlist:\n${results.join("\n")}`;
         } catch (error) {
-            console.error("BBO Provider error:", error);
-            return "Unable to fetch BBO data";
+            elizaLogger.error("BBO Provider error:", error);
+            return "Unable to fetch BBO data. Please check your watchlist and try again.";
         }
     },
 };

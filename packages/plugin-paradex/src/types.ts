@@ -7,6 +7,7 @@ export interface ParadexState {
             spreadPercentage: number;
             lastBid: number;
             lastAsk: number;
+            timestamp: number;
         };
     };
 }
