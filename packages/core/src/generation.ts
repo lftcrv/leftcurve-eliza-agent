@@ -42,7 +42,9 @@ import {
 } from "./types.ts";
 import { fal } from "@fal-ai/client";
 import { tavily } from "@tavily/core";
-
+import fs from "fs";
+import path from "path";
+const LOGPROMPT = true;
 type Tool = CoreTool<any, any>;
 type StepResult = AIStepResult<any>;
 
@@ -197,6 +199,18 @@ export async function generateText({
         modelProvider: runtime.modelProvider,
         model: modelClass,
     });
+
+    const logDir = path.join(process.cwd(), "logs");
+    const logFile = path.join(
+        logDir,
+        `prompts-${new Date().toISOString().split("T")[0]}.txt`
+    );
+    if (LOGPROMPT) {
+        fs.mkdirSync(logDir, { recursive: true });
+        elizaLogger.log("logFile:", logFile);
+        const promptLog = `\n=== PROMPT \nContext:\n${context}\n`;
+        fs.appendFileSync(logFile, promptLog);
+    }
 
     const provider = runtime.modelProvider;
     const endpoint =
@@ -800,6 +814,11 @@ export async function generateText({
                 elizaLogger.error(errorMessage);
                 throw new Error(errorMessage);
             }
+        }
+
+        if (LOGPROMPT) {
+            const responseLog = `\n=== RESPONSE ===\n${response}\n\n===================\n`;
+            fs.appendFileSync(logFile, responseLog);
         }
 
         return response;
