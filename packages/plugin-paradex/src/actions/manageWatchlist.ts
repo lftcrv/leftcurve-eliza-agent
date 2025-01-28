@@ -12,28 +12,37 @@ import {
 import { ParadexState } from "../types";
 import { getMarketsAction } from "./markets";
 
+interface WatchlistOperation {
+    market: string;
+    type: "add" | "remove";
+}
+
 interface WatchlistUpdate {
-    markets: string[];
-    operation: "add" | "remove";
+    operations: WatchlistOperation[];
 }
 
 interface WatchlistState extends State, ParadexState {
     marketsInfo?: string;
+    currentWatchlist?: string;
+    lastMessage?: string;
 }
-
 const watchlistTemplate = `Available markets: {{marketsInfo}}
-  Extract the following from the user's request:
-  - Markets to add/remove from watchlist
-  - Operation type (add/remove)
-  Respond with a JSON markdown block. Markets must exactly match available markets. Use null if values cannot be determined.
-  Example response:
-  \`\`\`json
-  {
-    "markets": ["BTC-USD-PERP", "ETH-USD-PERP"],
-    "operation": "add"
-  }
-  \`\`\`
-  {{recentMessages}}`;
+Current watchlist: {{currentWatchlist}}
+
+Analyze ONLY the latest user message to extract requested operations.
+Last message: "{{lastMessage}}"
+
+Each operation should either add or remove a market.
+Markets must exactly match available markets.
+
+Respond with a JSON markdown block containing ONLY operations from the last message:
+\`\`\`json
+{
+  "operations": [
+    {"market": "ETH-USD-PERP", "type": "add"}
+  ]
+}
+\`\`\``;
 
 export const manageWatchlistAction: Action = {
     name: "MANAGE_WATCHLIST",
@@ -75,6 +84,8 @@ export const manageWatchlistAction: Action = {
         );
         elizaLogger.success("Current watchlist:", currentWatchlist);
 
+        state.currentWatchlist = currentWatchlist.join(", ");
+
         // Get available markets
         elizaLogger.info("Fetching available markets...");
         const availableMarkets = await getMarketsAction.handler(
@@ -95,6 +106,7 @@ export const manageWatchlistAction: Action = {
 
         elizaLogger.info("Available markets:", marketsList);
         state.marketsInfo = marketsList.join(", ");
+        state.lastMessage = message.content.text;
 
         // Generate update from user request
         elizaLogger.info("Generating response from user request...");
@@ -110,8 +122,8 @@ export const manageWatchlistAction: Action = {
             modelClass: ModelClass.SMALL,
         })) as WatchlistUpdate;
 
-        if (!response.markets?.length) {
-            elizaLogger.warn("No markets found in response");
+        if (!response.operations?.length) {
+            elizaLogger.warn("No operations found in response");
             return false;
         }
 
@@ -119,42 +131,64 @@ export const manageWatchlistAction: Action = {
 
         // Validate markets exist
         elizaLogger.info("Validating requested markets...");
-        const validMarkets = response.markets.filter((m) =>
-            marketsList.includes(m)
+        const validMarkets = response.operations.filter((op) =>
+            marketsList.includes(op.market)
         );
 
-        if (validMarkets.length === 0) {
+        const validOperations = validMarkets.filter((op) => {
+            if (op.type === "add") {
+                const alreadyInWatchlist = currentWatchlist.includes(op.market);
+                if (alreadyInWatchlist) {
+                    elizaLogger.info(
+                        `${op.market} is already in watchlist, skipping add operation`
+                    );
+                    return false;
+                }
+                return true;
+            } else if (op.type === "remove") {
+                const isInWatchlist = currentWatchlist.includes(op.market);
+                if (!isInWatchlist) {
+                    elizaLogger.info(
+                        `${op.market} is not in watchlist, skipping remove operation`
+                    );
+                    return false;
+                }
+                return true;
+            }
+            return false;
+        });
+
+        if (validOperations.length === 0) {
             elizaLogger.warn("No valid markets found in request");
             return false;
         }
 
-        elizaLogger.success("Valid markets found:", validMarkets);
+        elizaLogger.success("Valid operations:", validOperations);
 
-        // Update watchlist based on operation
-        elizaLogger.info(
-            `Updating watchlist with operation: ${response.operation}`
-        );
-        let newWatchlist: string[];
-        if (response.operation === "add") {
-            elizaLogger.info("Adding markets to watchlist...");
-            newWatchlist = [...new Set([...currentWatchlist, ...validMarkets])];
-        } else {
-            elizaLogger.info("Removing markets from watchlist...");
-            newWatchlist = currentWatchlist.filter(
-                (m) => !validMarkets.includes(m)
-            );
+        // Update watchlist based on operations
+        let newWatchlist = [...currentWatchlist];
+        for (const operation of validOperations) {
+            if (operation.type === "add") {
+                elizaLogger.info(`Adding ${operation.market} to watchlist...`);
+                if (!newWatchlist.includes(operation.market)) {
+                    newWatchlist.push(operation.market);
+                }
+            } else if (operation.type === "remove") {
+                elizaLogger.info(
+                    `Removing ${operation.market} from watchlist...`
+                );
+                newWatchlist = newWatchlist.filter(
+                    (m) => m !== operation.market
+                );
+            }
         }
         elizaLogger.info("Watchlist update prepared", {
             old_list: currentWatchlist,
             new_list: newWatchlist,
-            changes: {
-                added: response.operation === "add" ? validMarkets : [],
-                removed: response.operation === "remove" ? validMarkets : [],
-            },
+            operations: validOperations,
         });
 
         // Save updated watchlist to database
-        elizaLogger.info("Saving updated watchlist to database...");
         await runtime.databaseAdapter.upsertWatchlist({
             room_id: message.roomId,
             user_id: message.userId,
