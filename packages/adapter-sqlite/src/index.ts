@@ -106,7 +106,7 @@ export class SqliteDatabaseAdapter
                 "0x102d5e124c51b936ee87302e0f938165aec96fb6c2027ae7f3a5ed46c77573b"
             ) VALUES (
                 ?, -- agentID
-                0, 0, 0.64, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0
+                500, 0, 1.64, 150, 1000, 0, 7500, 5, 0, 0, 0, 0, 0, 0, 400, 600, 250
             )
             ON CONFLICT(agentID) DO NOTHING;
         `;
