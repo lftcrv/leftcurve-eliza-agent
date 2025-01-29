@@ -157,6 +157,16 @@ export class SqliteDatabaseAdapter
         tx();
     }
 
+    async getWalletBalances(agentId: UUID) : Promise<Record<string, number> | undefined> {
+        const sql = `SELECT * FROM agent_balances WHERE agentID = ?`;
+        const balanceRow = this.db.prepare(sql).get(agentId) as Record<string, number> | undefined;
+        if (!balanceRow) {
+            throw new Error(`No wallet found for agent ${agentId}`);
+        }
+        delete balanceRow["agentID"];
+        return balanceRow;
+    }
+
 
     async getAccountById(userId: UUID): Promise<Account | null> {
         const sql = "SELECT * FROM accounts WHERE id = ?";

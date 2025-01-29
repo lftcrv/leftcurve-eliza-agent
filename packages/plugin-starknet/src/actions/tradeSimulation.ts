@@ -22,16 +22,12 @@ import {
     QuoteRequest,
 } from "@avnu/avnu-sdk";
 
-import { RpcProvider, Contract } from "starknet";
+import { RpcProvider, Contract, wallet } from "starknet";
 import { getStarknetAccount } from "../utils/index.ts";
 import { validateStarknetConfig } from "../environment.ts";
 import * as dotenv from "dotenv";
 import axios from "axios";
-import prisma from './agent/src/db.ts';
 
-dotenv.config();
-
-const BACKEND_API_KEY = process.env.BACKEND_API_KEY;
 
 interface MarketData {
     currentPrice: number;
@@ -359,30 +355,47 @@ async function getCurrentNews(searchTerm: string) {
         .join("\n\n");
 }
 
-async function getWallet(id: string) {
-    const user = await prisma.user.findUnique({
-      where: { id }
-    });
-    return user?.wallet;
-   }
+export async function getSimulatedWalletBalances(runtime: IAgentRuntime): Promise<string> {
+    const db = runtime.databaseAdapter;
+
+    try {
+        // Attendre la récupération des soldes
+        const balanceRow = await db.getWalletBalances(runtime.agentId);
+
+        if (!balanceRow) {
+            return "No wallet data available";
+        }
+
+        console.log(`VOILAAA`, balanceRow);
+
+        const formattedBalances = tokens.map(({ address, name }) => {
+            return `${name}: ${balanceRow[address] ?? 0}`;
+        });
+
+        return formattedBalances.join(", ");
+    } catch (error) {
+        console.error("Error retrieving wallet balances:", error);
+        return "Error retrieving wallet data";
+    }
+}
 
 const tokenInfos = await MultipleTokenInfos();
 const tokenPrices = await MultipleTokenPriceFeeds();
 
-export const tradeAction: Action = {
-    name: "EXECUTE_STARKNET_TRADE",
+export const tradeSimulationAction: Action = {
+    name: "SIMULATE_STARKNET_TRADE",
     similes: [
-        "TRADE",
-        "STARKNET_TOKEN_TRADE",
-        "STARKNET_TRADE_TOKENS",
-        "STARKNET_EXCHANGE_TOKENS",
+        "SIMULATE_TRADE",
+        "STARKNET_SIMULATE_TOKEN_TRADE",
+        "STARKNET_SIMULATE_TRADE_TOKENS",
+        "STARKNET_SIMULATE_EXCHANGE_TOKENS",
     ],
     validate: async (runtime: IAgentRuntime, _message: Memory) => {
         await validateStarknetConfig(runtime);
         return true;
     },
     description:
-        "Perform a token swap on starknet. Use this action when a user asks you to trade.",
+        "Perform a simulate token swap on starknet. Use this action when a user asks you to trade.",
     handler: async (
         runtime: IAgentRuntime,
         message: Memory,
@@ -390,7 +403,7 @@ export const tradeAction: Action = {
         _options: { [key: string]: unknown },
         callback?: HandlerCallback
     ): Promise<boolean> => {
-        elizaLogger.log("Starting EXECUTE_STARKNET_TRADE handler...");
+        elizaLogger.log("Starting SIMULATE_STARKNET_TRADE handler...");
         if (!state) {
             state = (await runtime.composeState(message)) as State;
         } else {
@@ -433,6 +446,8 @@ export const tradeAction: Action = {
 
             return response;
         }
+
+        const walletBalances = await getSimulatedWalletBalances(runtime);
 
         const shouldTradeTemplate =
             `# Task: Decide whether you should make any swap or stay idle and provide a response.
@@ -492,7 +507,9 @@ Warning: To avoid fee issues, always ensure you have at least 0.0016 ETH and 4 S
             tokenInfos +
             "\n\n And \n\n" +
             tokenPrices +
-            `{{{providers}}}`;
+            "\n\n And here is your wallet's balances : \n\n" +
+            `${walletBalances}`;
+
         const shouldTradeContext = composeContext({
             state,
             template: shouldTradeTemplate,
@@ -540,10 +557,16 @@ Warning: To avoid fee issues, always ensure you have at least 0.0016 ETH and 4 S
                     };
                     const quote = await fetchQuotes(quoteParams);
                     console.log("sellAmount : ");
-                    console.log(quote[0].sellAmount);
-
+                    console.log(convertAmountFromDecimals(quote[0].sellTokenAddress, quote[0].sellAmount));
                     console.log("buyAmount : ");
-                    console.log(quote[0].buyAmount);
+                    console.log(convertAmountFromDecimals(quote[0].buyTokenAddress, quote[0].buyAmount));
+                    runtime.databaseAdapter.updateSimulatedWallet(
+                        runtime.agentId,
+                        quote[0].sellTokenAddress,
+                        convertAmountFromDecimals(quote[0].sellTokenAddress, quote[0].sellAmount),
+                        quote[0].buyTokenAddress,
+                        convertAmountFromDecimals(quote[0].buyTokenAddress, quote[0].buyAmount)
+                     );
                     return true;
                 } catch (error) {
                     console.log("Error during token swap:", error);
@@ -572,7 +595,7 @@ Warning: To avoid fee issues, always ensure you have at least 0.0016 ETH and 4 S
             },
             {
                 user: "{{agent}}",
-                content: { text: "", action: "HELLO_WORLD" },
+                content: { text: "", action: "EXECUTE_STARKNET_TRADE" },
             },
         ],
         [
@@ -584,7 +607,7 @@ Warning: To avoid fee issues, always ensure you have at least 0.0016 ETH and 4 S
             },
             {
                 user: "{{agent}}",
-                content: { text: "", action: "HELLO_WORLD" },
+                content: { text: "", action: "EXECUTE_STARKNET_TRADERLD" },
             },
         ],
     ] as ActionExample[][],
