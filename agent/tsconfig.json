@@ -16,6 +16,6 @@
     },
     "include": [
         "src",
-        "../db.ts"
+        "src/db.ts"
     ]
 }

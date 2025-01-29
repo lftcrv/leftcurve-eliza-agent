@@ -1,4 +1,4 @@
-import prisma from '../../db'
+import prisma from './db'
 
 export async function createUser(id: string) {
     const wallet = {};

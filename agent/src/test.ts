@@ -1,4 +1,4 @@
-import prisma from '../../db'
+import prisma from './db'
 
 async function test() {
   const user = await prisma.user.create({
