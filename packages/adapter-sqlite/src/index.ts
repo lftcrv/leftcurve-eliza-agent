@@ -114,7 +114,6 @@ export class SqliteDatabaseAdapter
         this.db.prepare(sql).run(agentID);
     }
 
-
     async updateSimulatedWallet(
         agentId: UUID,
         sellAddress: string,
@@ -124,27 +123,37 @@ export class SqliteDatabaseAdapter
     ): Promise<void> {
         const tx = this.db.transaction(() => {
             const checkSql = "SELECT * FROM agent_balances WHERE agentID = ?";
-            const existingRow = this.db.prepare(checkSql).get(agentId) as Record<string, any> | undefined;
+            const existingRow = this.db.prepare(checkSql).get(agentId) as
+                | Record<string, any>
+                | undefined;
 
             if (!existingRow) {
                 throw new Error(`Agent ${agentId} not found in agent_balances`);
             }
 
             if (!(sellAddress in existingRow) || !(buyAddress in existingRow)) {
-                throw new Error("One or both addresses are not valid columns in agent_balances");
+                throw new Error(
+                    "One or both addresses are not valid columns in agent_balances"
+                );
             }
 
             const checkBalanceSql = `SELECT "${sellAddress}" FROM agent_balances WHERE agentID = ?`;
-            const balanceRow = this.db.prepare(checkBalanceSql).get(agentId) as Record<string, number> | undefined;
+            const balanceRow = this.db.prepare(checkBalanceSql).get(agentId) as
+                | Record<string, number>
+                | undefined;
 
             if (!balanceRow || balanceRow[sellAddress] === undefined) {
-                throw new Error(`Could not retrieve balance for ${sellAddress}`);
+                throw new Error(
+                    `Could not retrieve balance for ${sellAddress}`
+                );
             }
 
             const currentBalance = balanceRow[sellAddress];
 
             if (currentBalance < sellAmount) {
-                throw new Error(`Insufficient balance: ${currentBalance} available, tried to sell ${sellAmount}`);
+                throw new Error(
+                    `Insufficient balance: ${currentBalance} available, tried to sell ${sellAmount}`
+                );
             }
 
             const sellSql = `UPDATE agent_balances SET "${sellAddress}" = "${sellAddress}" - ? WHERE agentID = ?`;
@@ -157,16 +166,19 @@ export class SqliteDatabaseAdapter
         tx();
     }
 
-    async getWalletBalances(agentId: UUID) : Promise<Record<string, number> | undefined> {
+    async getWalletBalances(
+        agentId: UUID
+    ): Promise<Record<string, number> | undefined> {
         const sql = `SELECT * FROM agent_balances WHERE agentID = ?`;
-        const balanceRow = this.db.prepare(sql).get(agentId) as Record<string, number> | undefined;
+        const balanceRow = this.db.prepare(sql).get(agentId) as
+            | Record<string, number>
+            | undefined;
         if (!balanceRow) {
             throw new Error(`No wallet found for agent ${agentId}`);
         }
         delete balanceRow["agentID"];
         return balanceRow;
     }
-
 
     async getAccountById(userId: UUID): Promise<Account | null> {
         const sql = "SELECT * FROM accounts WHERE id = ?";

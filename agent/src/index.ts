@@ -60,7 +60,7 @@ import fs from "fs";
 import path from "path";
 import { fileURLToPath } from "url";
 import yargs from "yargs";
-import prisma from './db';
+import prisma from "./db";
 
 const __filename = fileURLToPath(import.meta.url); // get the resolved path to the file
 const __dirname = path.dirname(__filename); // get the name of the directory
@@ -478,15 +478,15 @@ export async function createAgent(
 
     //Check if prisma user already exist, if not a new user is created
     const existingUser = await prisma.user.findUnique({
-        where: { id: character.id }
+        where: { id: character.id },
     });
 
     if (!existingUser) {
         await prisma.user.create({
             data: {
                 id: character.id,
-                wallet: { balance: 0 }
-            }
+                wallet: { balance: 0 },
+            },
         });
     }
 
@@ -497,11 +497,7 @@ export async function createAgent(
         evaluators: [],
         character,
         // character.plugins are handled when clients are added
-        plugins: [
-            bootstrapPlugin,
-            myPlugin,
-            starknetPlugin
-        ].filter(Boolean),
+        plugins: [bootstrapPlugin, myPlugin, starknetPlugin].filter(Boolean),
         providers: [],
         actions: [],
         services: [],
@@ -555,7 +551,9 @@ async function startAgent(
         // start services/plugins/process knowledge
         await runtime.initialize();
 
-        await db.initSimulatedWallet(runtime.agentId);
+        await (db as SqliteDatabaseAdapter).initSimulatedWallet(
+            runtime.agentId
+        );
 
         //await db.updateSimulatedWallet(
         //    runtime.agentId,
@@ -610,9 +608,9 @@ const startAgents = async () => {
     }
 
     // upload some agent functionality into directClient
-    directClient.startAgent = async character => {
-      // wrap it so we don't have to inject directClient later
-      return startAgent(character, directClient)
+    directClient.startAgent = async (character) => {
+        // wrap it so we don't have to inject directClient later
+        return startAgent(character, directClient);
     };
     directClient.start(serverPort);
 
