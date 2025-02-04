@@ -32,23 +32,6 @@ dotenv.config();
 const BACKEND_API_KEY = process.env.BACKEND_API_KEY;
 const NEWS_API_KEY = process.env.NEWS_API_KEY;
 
-export function convertAmountFromDecimals(
-    address: string,
-    amount: BigInt
-): number | null {
-    const token = STARKNET_TOKENS.find(
-        (t) => t.address.toLowerCase() === address.toLowerCase()
-    );
-    if (!token) {
-        console.error("Token not found for address:", address);
-        return null;
-    }
-    const decimals = token.decimals;
-    const sellAmount = amount;
-    const result = Number(sellAmount) / 10 ** decimals;
-    return result;
-}
-
 export const MultipleTokenInfos = async () => {
     try {
         const tokenDetailsEssentials =
@@ -172,6 +155,7 @@ export const tradeAction: Action = {
                         sellAmount: BigInt(swap.sellAmount),
                     };
                     const quote = await fetchQuotes(quoteParams);
+                    const bestQuote = quote[0];
                     //getStarknetAccount(runtime);
                     // Execute swap
                     const swapResult = await executeAvnuSwap(
@@ -188,7 +172,7 @@ export const tradeAction: Action = {
                     );
                     callback?.({
                         text:
-                            "Swap completed successfully! tx: " +
+                            "Swap completed successfully! tx: " + // todo: be sure that the swap indeed executed successfully
                             swapResult.transactionHash,
                     });
 
@@ -210,15 +194,13 @@ export const tradeAction: Action = {
                             sellTokenAddress: swap.sellTokenAddress,
                             buyTokenName: buyTokenName,
                             buyTokenAddress: swap.buyTokenAddress,
-                            sellAmount: convertAmountFromDecimals(
-                                swap.sellTokenAddress,
-                                BigInt(swap.sellAmount)
-                            ),
-                            buyAmount: convertAmountFromDecimals(
-                                swap.buyTokenAddress,
-                                quote[0].buyAmount
-                            ),
-                            tradePriceUSD: quote[0].buyTokenPriceInUsd,
+                            sellAmount: swap.sellAmount.toString(),
+                            buyAmount: bestQuote
+                                ? bestQuote.buyAmount.toString()
+                                : "0",
+                            tradePriceUSD: bestQuote
+                                ? bestQuote.buyTokenPriceInUsd
+                                : "0",
                             explanation: parsedDecision.Explanation,
                         },
                     };

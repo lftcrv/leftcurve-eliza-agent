@@ -17,11 +17,7 @@ import { STARKNET_TOKENS } from "../utils/constants.ts";
 import { TradeDecision } from "./types.ts";
 import { isSwapContent } from "./swap.ts";
 import { shouldTradeTemplateInstruction } from "./templates.ts";
-import {
-    convertAmountFromDecimals,
-    MultipleTokenInfos,
-    MultipleTokenPriceFeeds,
-} from "./trade.ts";
+import { MultipleTokenInfos, MultipleTokenPriceFeeds } from "./trade.ts";
 
 export async function getSimulatedWalletBalances(
     runtime: IAgentRuntime
@@ -129,22 +125,26 @@ export const tradeSimulationAction: Action = {
                         buyTokenAddress: swap.buyTokenAddress,
                         sellAmount: BigInt(swap.sellAmount),
                     };
+
                     const quote = await fetchQuotes(quoteParams);
+
+                    const bestQuote = quote[0];
+                    if (!bestQuote) {
+                        throw new Error(
+                            "No valid quote received from fetchQuotes."
+                        );
+                    }
+
                     (
                         runtime.databaseAdapter as SqliteDatabaseAdapter
                     ).updateSimulatedWallet(
                         runtime.agentId,
-                        quote[0].sellTokenAddress,
-                        convertAmountFromDecimals(
-                            quote[0].sellTokenAddress,
-                            quote[0].sellAmount
-                        ),
-                        quote[0].buyTokenAddress,
-                        convertAmountFromDecimals(
-                            quote[0].buyTokenAddress,
-                            quote[0].buyAmount
-                        )
+                        bestQuote.sellTokenAddress,
+                        Number(bestQuote.sellAmount),
+                        bestQuote.buyTokenAddress,
+                        Number(bestQuote.buyAmount)
                     );
+
                     return true;
                 } catch (error) {
                     console.log("Error during token swap:", error);
