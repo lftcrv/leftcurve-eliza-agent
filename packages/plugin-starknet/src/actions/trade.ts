@@ -4,7 +4,6 @@ import {
     composeContext,
     elizaLogger,
     generateText,
-    generateTrueOrFalse,
     HandlerCallback,
     IAgentRuntime,
     Memory,
@@ -21,7 +20,7 @@ import { validateStarknetConfig } from "../environment.ts";
 import * as dotenv from "dotenv";
 import axios from "axios";
 import { TradeDecision } from "./types.ts";
-import { tokens } from "./constants.ts";
+import { STARKNET_TOKENS } from "./constants.ts";
 import { shouldTradeTemplateInstruction } from "./templates.ts";
 import {
     fetchMultipleTokenDetails,
@@ -37,7 +36,7 @@ function convertAmountFromDecimals(
     address: string,
     amount: BigInt
 ): number | null {
-    const token = tokens.find(
+    const token = STARKNET_TOKENS.find(
         (t) => t.address.toLowerCase() === address.toLowerCase()
     );
     if (!token) {
@@ -52,7 +51,8 @@ function convertAmountFromDecimals(
 
 const MultipleTokenInfos = async () => {
     try {
-        const tokenDetailsEssentials = await fetchMultipleTokenDetails(tokens);
+        const tokenDetailsEssentials =
+            await fetchMultipleTokenDetails(STARKNET_TOKENS);
         return (
             "# Here is some information about the market :\n" +
             JSON.stringify(tokenDetailsEssentials, null, 2)
@@ -63,30 +63,30 @@ const MultipleTokenInfos = async () => {
 };
 
 const MultipleTokenPriceFeeds = async (): Promise<string> => {
-    const priceFeeds = await fetchMultipleTokenPriceFeeds(tokens);
+    const priceFeeds = await fetchMultipleTokenPriceFeeds(STARKNET_TOKENS);
     return (
         "# Here are the token price feeds from the past three days: \n" +
         JSON.stringify(priceFeeds, null, 2)
     );
 };
 
-async function getCurrentNews(searchTerm: string) {
-    if (!NEWS_API_KEY) {
-        throw new Error("NEWS_API_KEY environment variable is not set");
-    }
+// async function getCurrentNews(searchTerm: string) {
+//     if (!NEWS_API_KEY) {
+//         throw new Error("NEWS_API_KEY environment variable is not set");
+//     }
 
-    const response = await fetch(
-        `https://newsapi.org/v2/everything?q=${searchTerm}&apiKey=${NEWS_API_KEY}`
-    );
-    const data = await response.json();
-    return data.articles
-        .slice(0, 5)
-        .map(
-            (article) =>
-                `${article.title}\n${article.description}\n${article.url}\n${article.content.slice(0, 1000)}`
-        )
-        .join("\n\n");
-}
+//     const response = await fetch(
+//         `https://newsapi.org/v2/everything?q=${searchTerm}&apiKey=${NEWS_API_KEY}`
+//     );
+//     const data = await response.json();
+//     return data.articles
+//         .slice(0, 5)
+//         .map(
+//             (article) =>
+//                 `${article.title}\n${article.description}\n${article.url}\n${article.content.slice(0, 1000)}`
+//         )
+//         .join("\n\n");
+// }
 
 export const tradeAction: Action = {
     name: "EXECUTE_STARKNET_TRADE",
@@ -192,12 +192,12 @@ export const tradeAction: Action = {
                             swapResult.transactionHash,
                     });
 
-                    const sellTokenName = tokens.find(
+                    const sellTokenName = STARKNET_TOKENS.find(
                         (t) =>
                             t.address.toLowerCase() ===
                             swap.sellTokenAddress.toLowerCase()
                     ).name;
-                    const buyTokenName = tokens.find(
+                    const buyTokenName = STARKNET_TOKENS.find(
                         (t) =>
                             t.address.toLowerCase() ===
                             swap.buyTokenAddress.toLowerCase()

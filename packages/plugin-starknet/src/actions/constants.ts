@@ -1,4 +1,4 @@
-export const tokens = [
+export const STARKNET_TOKENS = [
     {
         address:
             "0x3b405a98c9e795d427fe82cdeeeed803f221b52471e3a757574a2b4180793ee",
