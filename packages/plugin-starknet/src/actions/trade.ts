@@ -98,6 +98,7 @@ export const tradeAction: Action = {
         } else {
             state = await runtime.updateRecentMessageState(state);
         }
+        const CONTAINER_ID = process.env.CONTAINER_ID;
 
         const tokenInfos = await MultipleTokenInfos();
         const tokenPrices = await MultipleTokenPriceFeeds();
@@ -189,6 +190,7 @@ export const tradeAction: Action = {
 
                     const tradeObject = {
                         tradeId: swapResult.transactionHash,
+                        containerId: CONTAINER_ID,
                         trade: {
                             sellTokenName: sellTokenName,
                             sellTokenAddress: swap.sellTokenAddress,
