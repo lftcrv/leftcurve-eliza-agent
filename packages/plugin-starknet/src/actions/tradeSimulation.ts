@@ -84,27 +84,28 @@ export const tradeSimulationAction: Action = {
             tokenInfos +
             "\n\n And \n\n" +
             tokenPrices +
-            `{{{providers}}}`;
-        "\n\n And here is your wallet's balances : \n\n" + `${walletBalances}`;
+            `{{{providers}}}` +
+            "\n\n And here is your wallet's balances : \n\n" +
+            `${walletBalances}`;
 
         const shouldTradeContext = composeContext({
             state,
             template: shouldTradeTemplate,
         });
 
-        const response = await generateText({
+        const tradeDecisionResponse = await generateText({
             context: shouldTradeContext,
             modelClass: ModelClass.MEDIUM,
             runtime,
         });
 
-        callback({ text: response });
-
         try {
-            const parsedDecision: TradeDecision = JSON.parse(response);
-            const swap = parsedDecision.swap;
+            const parsedDecision: TradeDecision = JSON.parse(
+                tradeDecisionResponse
+            );
 
             if (parsedDecision.shouldTrade === "yes") {
+                const swap = parsedDecision.swap;
                 if (!isSwapContent(swap)) {
                     callback?.({
                         text: "Invalid swap content, please try again.",
@@ -119,23 +120,25 @@ export const tradeSimulationAction: Action = {
                     elizaLogger.log(
                         "sellTokenAddress : " + swap.sellTokenAddress
                     );
-                    // Get quote
+
+                    // Get quote for the proposed trade
                     const quoteParams: QuoteRequest = {
                         sellTokenAddress: swap.sellTokenAddress,
                         buyTokenAddress: swap.buyTokenAddress,
                         sellAmount: BigInt(swap.sellAmount),
                     };
 
-                    const quote = await fetchQuotes(quoteParams);
+                    const quotes = await fetchQuotes(quoteParams);
+                    const bestQuote = quotes[0];
 
-                    const bestQuote = quote[0];
                     if (!bestQuote) {
                         throw new Error(
                             "No valid quote received from fetchQuotes."
                         );
                     }
 
-                    (
+                    // Update simulated wallet with the quote results
+                    await (
                         runtime.databaseAdapter as SqliteDatabaseAdapter
                     ).updateSimulatedWallet(
                         runtime.agentId,
@@ -145,20 +148,43 @@ export const tradeSimulationAction: Action = {
                         Number(bestQuote.buyAmount)
                     );
 
+                    // Create enhanced response with quote information
+                    const enhancedResponse: TradeDecision & { quoteInfo: any } =
+                        {
+                            ...parsedDecision,
+                            quoteInfo: {
+                                sellAmount: bestQuote.sellAmount.toString(),
+                                buyAmount: bestQuote.buyAmount.toString(),
+                                sellTokenAddress: bestQuote.sellTokenAddress,
+                                buyTokenAddress: bestQuote.buyTokenAddress,
+                            },
+                        };
+
+                    // Send callback with the enhanced response
+                    callback?.({
+                        text: JSON.stringify(enhancedResponse, null, 2),
+                    });
+
                     return true;
                 } catch (error) {
-                    console.log("Error during token swap:", error);
-                    callback?.({ text: `Error during swap:` });
+                    console.error("Error during token swap:", error);
+                    callback?.({
+                        text: `Error during swap: ${error.message}`,
+                    });
                     return false;
                 }
             } else {
+                // For "no" trade decisions, pass through the original response
                 callback?.({
-                    text: "It is not relevant to trade at the moment.",
+                    text: JSON.stringify(parsedDecision, null, 2),
                 });
             }
         } catch (error) {
-            console.error("Erreur de parsing JSON :", error);
-            return null;
+            console.error("Error parsing JSON response:", error);
+            callback?.({
+                text: "Error processing trade decision response",
+            });
+            return false;
         }
         return true;
     },
@@ -167,24 +193,24 @@ export const tradeSimulationAction: Action = {
             {
                 user: "{{user1}}",
                 content: {
-                    text: "Execute EXECUTE_STARKNET_TRADE",
+                    text: "Execute SIMULATE_STARKNET_TRADE",
                 },
             },
             {
                 user: "{{agent}}",
-                content: { text: "", action: "EXECUTE_STARKNET_TRADE" },
+                content: { text: "", action: "SIMULATE_STARKNET_TRADE" },
             },
         ],
         [
             {
                 user: "{{user1}}",
                 content: {
-                    text: "Trade",
+                    text: "simulate Trade",
                 },
             },
             {
                 user: "{{agent}}",
-                content: { text: "", action: "EXECUTE_STARKNET_TRADE" },
+                content: { text: "", action: "SIMULATE_STARKNET_TRADE" },
             },
         ],
     ] as ActionExample[][],

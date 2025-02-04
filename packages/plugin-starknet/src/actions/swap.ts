@@ -38,10 +38,11 @@ export function isSwapContent(content: SwapContent): content is SwapContent {
     // Validate addresses (must be 32-bytes long with 0x prefix)
     const validAddresses =
         content.sellTokenAddress.startsWith("0x") &&
-        content.sellTokenAddress.length === 66 &&
+        (content.sellTokenAddress.length === 66 ||
+            content.sellTokenAddress.length === 65) &&
         content.buyTokenAddress.startsWith("0x") &&
-        content.buyTokenAddress.length === 66;
-
+        (content.buyTokenAddress.length === 66 ||
+            content.buyTokenAddress.length === 65);
     return validAddresses;
 }
 
@@ -117,9 +118,7 @@ export const executeSwap: Action = {
             callback?.({ text: "Invalid swap content, please try again." });
             return false;
         }
-        elizaLogger.log("ooookkkkk 999999");
         try {
-            elizaLogger.log("ooookkkkk 00000");
             callback?.({ text: "OOOOOOOOOOOOKKKK 00000." });
             elizaLogger.log("buyTokenaddress : " + response.buyTokenAddress);
             elizaLogger.log("sellAmount : " + response.sellAmount);
