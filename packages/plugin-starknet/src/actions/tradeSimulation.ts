@@ -21,13 +21,12 @@ import {
     fetchQuotes,
     QuoteRequest,
 } from "@avnu/avnu-sdk";
-
+import { SqliteDatabaseAdapter } from "@ai16z/adapter-sqlite";
 import { RpcProvider, Contract, wallet } from "starknet";
 import { getStarknetAccount } from "../utils/index.ts";
 import { validateStarknetConfig } from "../environment.ts";
 import * as dotenv from "dotenv";
 import axios from "axios";
-
 
 interface MarketData {
     currentPrice: number;
@@ -355,18 +354,20 @@ async function getCurrentNews(searchTerm: string) {
         .join("\n\n");
 }
 
-export async function getSimulatedWalletBalances(runtime: IAgentRuntime): Promise<string> {
+export async function getSimulatedWalletBalances(
+    runtime: IAgentRuntime
+): Promise<string> {
     const db = runtime.databaseAdapter;
 
     try {
         // Attendre la récupération des soldes
-        const balanceRow = await db.getWalletBalances(runtime.agentId);
+        const balanceRow = await (
+            db as SqliteDatabaseAdapter
+        ).getWalletBalances(runtime.agentId);
 
         if (!balanceRow) {
             return "No wallet data available";
         }
-
-        console.log(`VOILAAA`, balanceRow);
 
         const formattedBalances = tokens.map(({ address, name }) => {
             return `${name}: ${balanceRow[address] ?? 0}`;
@@ -521,18 +522,11 @@ Warning: To avoid fee issues, always ensure you have at least 0.0016 ETH and 4 S
             runtime,
         });
 
-        console.log(response);
         callback({ text: response });
 
         try {
             const parsedDecision: TradeDecision = JSON.parse(response);
             const swap = parsedDecision.swap;
-            console.log("Should we trade:", parsedDecision.shouldTrade);
-            console.log("Token to sell:", swap.sellTokenAddress);
-            console.log("Token to buy:", swap.buyTokenAddress);
-            console.log("Amount:", swap.sellAmount);
-            console.log("Explanation:", parsedDecision.Explanation);
-            console.log("Tweet:", parsedDecision.Tweet);
 
             if (parsedDecision.shouldTrade === "yes") {
                 if (!isSwapContent(swap)) {
@@ -556,17 +550,21 @@ Warning: To avoid fee issues, always ensure you have at least 0.0016 ETH and 4 S
                         sellAmount: BigInt(swap.sellAmount),
                     };
                     const quote = await fetchQuotes(quoteParams);
-                    console.log("sellAmount : ");
-                    console.log(convertAmountFromDecimals(quote[0].sellTokenAddress, quote[0].sellAmount));
-                    console.log("buyAmount : ");
-                    console.log(convertAmountFromDecimals(quote[0].buyTokenAddress, quote[0].buyAmount));
-                    runtime.databaseAdapter.updateSimulatedWallet(
+                    (
+                        runtime.databaseAdapter as SqliteDatabaseAdapter
+                    ).updateSimulatedWallet(
                         runtime.agentId,
                         quote[0].sellTokenAddress,
-                        convertAmountFromDecimals(quote[0].sellTokenAddress, quote[0].sellAmount),
+                        convertAmountFromDecimals(
+                            quote[0].sellTokenAddress,
+                            quote[0].sellAmount
+                        ),
                         quote[0].buyTokenAddress,
-                        convertAmountFromDecimals(quote[0].buyTokenAddress, quote[0].buyAmount)
-                     );
+                        convertAmountFromDecimals(
+                            quote[0].buyTokenAddress,
+                            quote[0].buyAmount
+                        )
+                    );
                     return true;
                 } catch (error) {
                     console.log("Error during token swap:", error);
@@ -574,7 +572,6 @@ Warning: To avoid fee issues, always ensure you have at least 0.0016 ETH and 4 S
                     return false;
                 }
             } else {
-                console.log("It is not relevant to trade at the moment.");
                 callback?.({
                     text: "It is not relevant to trade at the moment.",
                 });
