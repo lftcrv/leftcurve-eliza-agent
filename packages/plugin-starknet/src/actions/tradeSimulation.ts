@@ -13,51 +13,15 @@ import {
 import { fetchQuotes, QuoteRequest } from "@avnu/avnu-sdk";
 import { SqliteDatabaseAdapter } from "@ai16z/adapter-sqlite";
 import { validateStarknetConfig } from "../environment.ts";
-import { STARKNET_TOKENS } from "./constants.ts";
+import { STARKNET_TOKENS } from "../utils/constants.ts";
 import { TradeDecision } from "./types.ts";
-import {
-    fetchMultipleTokenDetails,
-    fetchMultipleTokenPriceFeeds,
-} from "../providers/marketInfosProvider.ts";
 import { isSwapContent } from "./swap.ts";
 import { shouldTradeTemplateInstruction } from "./templates.ts";
-
-function convertAmountFromDecimals(
-    address: string,
-    amount: BigInt
-): number | null {
-    const token = STARKNET_TOKENS.find(
-        (t) => t.address.toLowerCase() === address.toLowerCase()
-    );
-    if (!token) {
-        console.error("Token not found for address:", address);
-        return null;
-    }
-    const decimals = token.decimals;
-    const sellAmount = amount;
-    const result = Number(sellAmount) / 10 ** decimals;
-    return result;
-}
-
-const MultipleTokenInfos = async () => {
-    try {
-        const tokenDetails = await fetchMultipleTokenDetails(STARKNET_TOKENS);
-        return (
-            "# Here is some information about the market :\n" +
-            JSON.stringify(tokenDetails, null, 2)
-        );
-    } catch (error) {
-        console.error("Error fetching detailed token information:", error);
-    }
-};
-
-const MultipleTokenPriceFeeds = async (): Promise<string> => {
-    const priceFeeds = await fetchMultipleTokenPriceFeeds(STARKNET_TOKENS);
-    return (
-        "# Here are the token price feeds from the past three days: \n" +
-        JSON.stringify(priceFeeds, null, 2)
-    );
-};
+import {
+    convertAmountFromDecimals,
+    MultipleTokenInfos,
+    MultipleTokenPriceFeeds,
+} from "./trade.ts";
 
 export async function getSimulatedWalletBalances(
     runtime: IAgentRuntime
@@ -65,7 +29,7 @@ export async function getSimulatedWalletBalances(
     const db = runtime.databaseAdapter;
 
     try {
-        // Attendre la récupération des soldes
+        // Wait for balance retrieval
         const balanceRow = await (
             db as SqliteDatabaseAdapter
         ).getWalletBalances(runtime.agentId);

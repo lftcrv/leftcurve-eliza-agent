@@ -20,7 +20,7 @@ import { validateStarknetConfig } from "../environment.ts";
 import * as dotenv from "dotenv";
 import axios from "axios";
 import { TradeDecision } from "./types.ts";
-import { STARKNET_TOKENS } from "./constants.ts";
+import { STARKNET_TOKENS } from "../utils/constants.ts";
 import { shouldTradeTemplateInstruction } from "./templates.ts";
 import {
     fetchMultipleTokenDetails,
@@ -32,7 +32,7 @@ dotenv.config();
 const BACKEND_API_KEY = process.env.BACKEND_API_KEY;
 const NEWS_API_KEY = process.env.NEWS_API_KEY;
 
-function convertAmountFromDecimals(
+export function convertAmountFromDecimals(
     address: string,
     amount: BigInt
 ): number | null {
@@ -49,7 +49,7 @@ function convertAmountFromDecimals(
     return result;
 }
 
-const MultipleTokenInfos = async () => {
+export const MultipleTokenInfos = async () => {
     try {
         const tokenDetailsEssentials =
             await fetchMultipleTokenDetails(STARKNET_TOKENS);
@@ -62,7 +62,7 @@ const MultipleTokenInfos = async () => {
     }
 };
 
-const MultipleTokenPriceFeeds = async (): Promise<string> => {
+export const MultipleTokenPriceFeeds = async (): Promise<string> => {
     const priceFeeds = await fetchMultipleTokenPriceFeeds(STARKNET_TOKENS);
     return (
         "# Here are the token price feeds from the past three days: \n" +
