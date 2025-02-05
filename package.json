@@ -57,7 +57,6 @@
         "@deepgram/sdk": "^3.9.0",
         "@elizaos/adapter-postgres": "^0.1.8",
         "@elizaos/adapter-sqlite": "^0.1.8",
-        "@prisma/client": "^6.2.1",
         "@vitest/eslint-plugin": "1.0.1",
         "amqplib": "0.10.5",
         "better-sqlite3": "11.6.0",
@@ -66,7 +65,6 @@
         "optional": "0.1.4",
         "pg": "8.13.1",
         "pnpm": "9.14.4",
-        "prisma": "^6.2.1",
         "sharp": "0.33.5",
         "tslog": "4.9.3"
     },
