@@ -27,6 +27,7 @@ import {
     fetchMultipleTokenPriceFeeds,
 } from "../providers/marketInfosProvider.ts";
 import { isSwapContent } from "./swap.ts";
+import os from "os";
 dotenv.config();
 
 const BACKEND_API_KEY = process.env.BACKEND_API_KEY;
@@ -98,7 +99,8 @@ export const tradeAction: Action = {
         } else {
             state = await runtime.updateRecentMessageState(state);
         }
-        const CONTAINER_ID = process.env.CONTAINER_ID;
+        const CONTAINER_ID =
+            process.env.CONTAINER_ID ?? os.hostname().slice(0, 12);
 
         const tokenInfos = await MultipleTokenInfos();
         const tokenPrices = await MultipleTokenPriceFeeds();
@@ -219,7 +221,6 @@ export const tradeAction: Action = {
                         information: tradeObject,
                     };
 
-                    console.log(message);
                     axios
                         .post(
                             `http://host.docker.internal:${process.env.BACKEND_PORT}/api/trading-information`,

@@ -18,6 +18,9 @@ import { TradeDecision } from "./types.ts";
 import { isSwapContent } from "./swap.ts";
 import { shouldTradeTemplateInstruction } from "./templates.ts";
 import { MultipleTokenInfos, MultipleTokenPriceFeeds } from "./trade.ts";
+import axios from "axios";
+import os from "os";
+const BACKEND_API_KEY = process.env.BACKEND_API_KEY;
 
 export async function getSimulatedWalletBalances(
     runtime: IAgentRuntime
@@ -75,6 +78,8 @@ export const tradeSimulationAction: Action = {
         } else {
             state = await runtime.updateRecentMessageState(state);
         }
+        const CONTAINER_ID =
+            process.env.CONTAINER_ID ?? os.hostname().slice(0, 12);
 
         const walletBalances = await getSimulatedWalletBalances(runtime);
 
@@ -112,81 +117,117 @@ export const tradeSimulationAction: Action = {
                     });
                     return false;
                 }
+                elizaLogger.log("buyTokenaddress : " + swap.buyTokenAddress);
+                elizaLogger.log("sellAmount : " + swap.sellAmount);
+                elizaLogger.log("sellTokenAddress : " + swap.sellTokenAddress);
+
+                // Get quote for the proposed trade
+                const quoteParams: QuoteRequest = {
+                    sellTokenAddress: swap.sellTokenAddress,
+                    buyTokenAddress: swap.buyTokenAddress,
+                    sellAmount: BigInt(swap.sellAmount),
+                };
+
+                const quotes = await fetchQuotes(quoteParams);
+                const bestQuote = quotes[0];
+
+                if (!bestQuote) {
+                    throw new Error(
+                        "No valid quote received from fetchQuotes."
+                    );
+                }
+
+                // Update simulated wallet with the quote results
+                await (
+                    runtime.databaseAdapter as SqliteDatabaseAdapter
+                ).updateSimulatedWallet(
+                    runtime.agentId,
+                    bestQuote.sellTokenAddress,
+                    Number(bestQuote.sellAmount),
+                    bestQuote.buyTokenAddress,
+                    Number(bestQuote.buyAmount)
+                );
+
+                const tradeObject = {
+                    tradeId: Date.now().toString(),
+                    containerId: CONTAINER_ID,
+                    trade: {
+                        sellTokenName: STARKNET_TOKENS.find(
+                            (t) =>
+                                t.address.toLowerCase() ===
+                                bestQuote.sellTokenAddress.toLowerCase()
+                        ).name,
+                        sellTokenAddress: bestQuote.sellTokenAddress,
+                        buyTokenName: STARKNET_TOKENS.find(
+                            (t) =>
+                                t.address.toLowerCase() ===
+                                bestQuote.buyTokenAddress.toLowerCase()
+                        ).name,
+                        buyTokenAddress: bestQuote.buyTokenAddress,
+                        sellAmount: bestQuote.sellAmount.toString(),
+                        buyAmount: bestQuote.buyAmount.toString(),
+                        tradePriceUSD: bestQuote.buyTokenPriceInUsd || "0",
+                        explanation: parsedDecision.Explanation,
+                    },
+                };
+
                 try {
-                    elizaLogger.log(
-                        "buyTokenaddress : " + swap.buyTokenAddress
-                    );
-                    elizaLogger.log("sellAmount : " + swap.sellAmount);
-                    elizaLogger.log(
-                        "sellTokenAddress : " + swap.sellTokenAddress
-                    );
-
-                    // Get quote for the proposed trade
-                    const quoteParams: QuoteRequest = {
-                        sellTokenAddress: swap.sellTokenAddress,
-                        buyTokenAddress: swap.buyTokenAddress,
-                        sellAmount: BigInt(swap.sellAmount),
-                    };
-
-                    const quotes = await fetchQuotes(quoteParams);
-                    const bestQuote = quotes[0];
-
-                    if (!bestQuote) {
-                        throw new Error(
-                            "No valid quote received from fetchQuotes."
-                        );
-                    }
-
-                    // Update simulated wallet with the quote results
-                    await (
-                        runtime.databaseAdapter as SqliteDatabaseAdapter
-                    ).updateSimulatedWallet(
-                        runtime.agentId,
-                        bestQuote.sellTokenAddress,
-                        Number(bestQuote.sellAmount),
-                        bestQuote.buyTokenAddress,
-                        Number(bestQuote.buyAmount)
-                    );
-
-                    // Create enhanced response with quote information
-                    const enhancedResponse: TradeDecision & { quoteInfo: any } =
+                    await axios.post(
+                        `http://host.docker.internal:${process.env.BACKEND_PORT}/api/trading-information`,
                         {
-                            ...parsedDecision,
-                            quoteInfo: {
-                                sellAmount: bestQuote.sellAmount.toString(),
-                                buyAmount: bestQuote.buyAmount.toString(),
-                                sellTokenAddress: bestQuote.sellTokenAddress,
-                                buyTokenAddress: bestQuote.buyTokenAddress,
+                            runtimeAgentId: state.agentId,
+                            information: tradeObject,
+                        },
+                        {
+                            headers: {
+                                "Content-Type": "application/json",
+                                "x-api-key": BACKEND_API_KEY,
                             },
-                        };
-
-                    // Send callback with the enhanced response
-                    callback?.({
-                        text: JSON.stringify(enhancedResponse, null, 2),
-                    });
-
+                        }
+                    );
                     return true;
                 } catch (error) {
-                    console.error("Error during token swap:", error);
-                    callback?.({
-                        text: `Error during swap: ${error.message}`,
-                    });
+                    console.error("Error saving trading information:", error);
                     return false;
                 }
             } else {
-                // For "no" trade decisions, pass through the original response
-                callback?.({
-                    text: JSON.stringify(parsedDecision, null, 2),
-                });
+                const noTradeObject = {
+                    tradeId: Date.now().toString(),
+                    containerId: CONTAINER_ID,
+                    trade: {
+                        explanation: parsedDecision.Explanation,
+                        noTradeReason: parsedDecision.Explanation,
+                    },
+                };
+
+                try {
+                    await axios.post(
+                        `http://host.docker.internal:${process.env.BACKEND_PORT}/api/trading-information`,
+                        {
+                            runtimeAgentId: state.agentId,
+                            information: noTradeObject,
+                        },
+                        {
+                            headers: {
+                                "Content-Type": "application/json",
+                                "x-api-key": BACKEND_API_KEY,
+                            },
+                        }
+                    );
+                    callback?.({
+                        text: JSON.stringify(parsedDecision, null, 2),
+                    });
+                    return true;
+                } catch (error) {
+                    console.error("Error saving no-trade information:", error);
+                    return false;
+                }
             }
         } catch (error) {
             console.error("Error parsing JSON response:", error);
-            callback?.({
-                text: "Error processing trade decision response",
-            });
+            callback?.({ text: "Error processing trade decision response" });
             return false;
         }
-        return true;
     },
     examples: [
         [
