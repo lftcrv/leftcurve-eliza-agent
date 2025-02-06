@@ -117,9 +117,6 @@ export const tradeSimulationAction: Action = {
                     });
                     return false;
                 }
-                elizaLogger.log("buyTokenaddress : " + swap.buyTokenAddress);
-                elizaLogger.log("sellAmount : " + swap.sellAmount);
-                elizaLogger.log("sellTokenAddress : " + swap.sellTokenAddress);
 
                 // Get quote for the proposed trade
                 const quoteParams: QuoteRequest = {
