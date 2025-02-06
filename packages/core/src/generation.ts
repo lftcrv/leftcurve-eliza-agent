@@ -376,13 +376,13 @@ export async function generateText({
       verifiableInference,
     });
   
+    const logDir = path.join(process.cwd(), "logs");
+    const logFile = path.join(
+      logDir,
+      `prompts-${new Date().toISOString().split("T")[0]}.txt`
+    );
     // Log prompts if enabled
     if (LOGPROMPT) {
-      const logDir = path.join(process.cwd(), "logs");
-      const logFile = path.join(
-        logDir,
-        `prompts-${new Date().toISOString().split("T")[0]}.txt`
-      );
       fs.mkdirSync(logDir, { recursive: true });
       elizaLogger.log("logFile:", logFile);
       const promptLog = `\n=== PROMPT \nContext:\n${context}\n`;
