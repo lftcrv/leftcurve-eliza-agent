@@ -1,6 +1,7 @@
 import { elizaLogger, IAgentRuntime } from "@ai16z/eliza";
 import { Fraction, Percent } from "@uniswap/sdk-core";
 import { Account, Contract, RpcProvider } from "starknet";
+import { STARKNET_TOKENS } from "./constants";
 
 export const getTokenBalance = async (
     runtime: IAgentRuntime,
@@ -120,4 +121,18 @@ export async function fetchWithRetry<T>(
     }
 
     throw lastError;
+}
+
+export function formatTokenAmount(
+    tokenAddress: string,
+    rawAmount: BigInt
+): number | null {
+    const token = STARKNET_TOKENS.find(
+        (t) => t.address.toLowerCase() === tokenAddress.toLowerCase()
+    );
+    if (!token) {
+        console.error("Token not found for address:", tokenAddress);
+        return null;
+    }
+    return Number(rawAmount) / 10 ** token.decimals;
 }

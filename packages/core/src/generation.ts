@@ -36,6 +36,8 @@ import {
     ActionResponse,
 } from "./types.ts";
 import { fal } from "@fal-ai/client";
+import fs from "fs";
+import path from "path";
 
 /**
  * Send a message to the model for a text generateText - receive a string back and parse how you'd like
@@ -66,15 +68,22 @@ export async function generateText({
         return "";
     }
 
-    console.log("*** GENERATE TEXT ***");
-    console.log(context);
-
     elizaLogger.log("Generating text...");
 
     elizaLogger.info("Generating text with options:", {
         modelProvider: runtime.modelProvider,
         model: modelClass,
     });
+
+    const logDir = path.join(process.cwd(), "logs");
+    fs.mkdirSync(logDir, { recursive: true });
+    const logFile = path.join(
+        logDir,
+        `prompts-${new Date().toISOString().split("T")[0]}.txt`
+    );
+    elizaLogger.log("logFile:", logFile);
+    const promptLog = `\n=== PROMPT \nContext:\n${context}\n`;
+    fs.appendFileSync(logFile, promptLog);
 
     const provider = runtime.modelProvider;
     const endpoint =
@@ -565,6 +574,8 @@ export async function generateText({
                 throw new Error(errorMessage);
             }
         }
+        const responseLog = `\n=== RESPONSE ===\n${response}\n\n===================\n`;
+        fs.appendFileSync(logFile, responseLog);
 
         return response;
     } catch (error) {
@@ -1068,8 +1079,12 @@ export const generateImage = async (
                 num_inference_steps: modelSettings?.steps ?? 50,
                 guidance_scale: data.guidanceScale || 3.5,
                 num_images: data.count,
-                enable_safety_checker: runtime.getSetting("FAL_AI_ENABLE_SAFETY_CHECKER") === "true",
-                safety_tolerance: Number(runtime.getSetting("FAL_AI_SAFETY_TOLERANCE") || "2"),
+                enable_safety_checker:
+                    runtime.getSetting("FAL_AI_ENABLE_SAFETY_CHECKER") ===
+                    "true",
+                safety_tolerance: Number(
+                    runtime.getSetting("FAL_AI_SAFETY_TOLERANCE") || "2"
+                ),
                 output_format: "png" as const,
                 seed: data.seed ?? 6252023,
                 ...(runtime.getSetting("FAL_AI_LORA_PATH")
