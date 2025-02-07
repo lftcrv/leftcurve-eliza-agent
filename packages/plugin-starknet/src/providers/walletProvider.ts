@@ -1,4 +1,4 @@
-import { IAgentRuntime, Memory, Provider, State } from "@ai16z/eliza";
+import { IAgentRuntime, Memory, Provider, State } from "@elizaos/core";
 import { RpcProvider, Contract } from "starknet";
 import * as dotenv from "dotenv";
 import { STARKNET_TOKENS } from "../utils/constants";

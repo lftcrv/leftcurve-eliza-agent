@@ -9,9 +9,9 @@ import {
     Memory,
     ModelClass,
     State,
-} from "@ai16z/eliza";
+} from "@elizaos/core";
 import { fetchQuotes, QuoteRequest } from "@avnu/avnu-sdk";
-import { SqliteDatabaseAdapter } from "@ai16z/adapter-sqlite";
+import { SqliteDatabaseAdapter } from "@elizaos/adapter-sqlite";
 import { validateStarknetConfig } from "../environment.ts";
 import { STARKNET_TOKENS } from "../utils/constants.ts";
 import { TradeDecision } from "./types.ts";

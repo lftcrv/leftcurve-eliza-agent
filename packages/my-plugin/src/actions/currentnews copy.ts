@@ -9,7 +9,7 @@
 //    ModelClass,
 //    State,
 //    type Action,
-//} from "@ai16z/eliza";
+//} from "@elizaos/core";
 //
 //async function getCurrentNews(searchTerm : string){
 //    const apiKey = "1809642513d84b009fe12de73a3af77f";

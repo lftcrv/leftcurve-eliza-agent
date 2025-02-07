@@ -9,7 +9,7 @@ import {
     ModelClass,
     State,
     type Action,
-} from "@ai16z/eliza";
+} from "@elizaos/core";
 
 export const scheduleTaskAction: Action = {
     name: "SCHEDULE_TASK",

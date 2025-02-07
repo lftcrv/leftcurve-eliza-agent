@@ -5,7 +5,7 @@ import {
     Memory,
     State,
     type Action,
-} from "@ai16z/eliza";
+} from "@elizaos/core";
 
 export const helloWorldAction: Action = {
     name: "HELLO_WORLD",

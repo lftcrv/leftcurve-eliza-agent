@@ -1,4 +1,4 @@
-import { Plugin } from "@ai16z/eliza";
+import { Plugin } from "@elizaos/core";
 import { helloWorldAction } from "./actions/helloworld.ts";
 import { factEvaluator } from "./evaluators/fact.ts";
 import { currentNewsAction } from "./actions/currentnews.ts";

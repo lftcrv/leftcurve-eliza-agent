@@ -1040,6 +1040,9 @@ export async function createAgent(
             getSecret(character, "DEXSCREENER_API_KEY")
                 ? dexScreenerPlugin
                 : null,
+            getSecret(character, "STARKNET_PRIVATE_KEY")
+                ? starknetPlugin
+                : null,
             // getSecret(character, "FOOTBALL_API_KEY") ? footballPlugin : null,
             // getSecret(character, "CONFLUX_CORE_PRIVATE_KEY")
             //     ? confluxPlugin
