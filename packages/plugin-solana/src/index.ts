@@ -30,6 +30,6 @@ export const solanaPlugin: Plugin = {
         take_order,
     ],
     evaluators: [trustEvaluator],
-    providers: [walletProvider, trustScoreProvider],
+    providers: [],
 };
 export default solanaPlugin;

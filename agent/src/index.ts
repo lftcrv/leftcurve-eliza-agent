@@ -28,6 +28,7 @@ import { lightningPlugin } from "@elizaos/plugin-lightning";
 import { elizaCodeinPlugin, onchainJson } from "@elizaos/plugin-iq6900";
 import { dcapPlugin } from "@elizaos/plugin-dcap";
 import { paradexPlugin } from "@elizaos/plugin-paradex";
+import { starknetPlugin } from "@elizaos/plugin-starknet";
 import {
     AgentRuntime,
     CacheManager,
@@ -1414,6 +1415,18 @@ async function startAgent(
 
         // start services/plugins/process knowledge
         await runtime.initialize();
+
+        await (db as SqliteDatabaseAdapter).initSimulatedWallet(
+            runtime.agentId
+        );
+
+        //await db.updateSimulatedWallet(
+        //    runtime.agentId,
+        //    "0x49d36570d4e46f48e99674bd3fcc84644ddd6b96f7c741b1562b82f9e004dc7",
+        //    0.1,
+        //    "0x3fe2b97c1fd336e750087d68b9b867997fd64a2661ff3ca5a7c771641e8e7ac",
+        //    0.2
+        //);
 
         // start assigned clients
         runtime.clients = await initializeClients(character, runtime);
