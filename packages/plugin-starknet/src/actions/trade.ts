@@ -17,7 +17,6 @@ import {
 } from "@avnu/avnu-sdk";
 import { getStarknetAccount } from "../utils/index.ts";
 import { validateStarknetConfig } from "../environment.ts";
-import * as dotenv from "dotenv";
 import axios from "axios";
 import { TradeDecision } from "./types.ts";
 import { STARKNET_TOKENS } from "../utils/constants.ts";
@@ -27,16 +26,12 @@ import {
     fetchMultipleTokenPriceFeeds,
 } from "../providers/marketInfosProvider.ts";
 import { isSwapContent } from "./swap.ts";
-import os from "os";
-dotenv.config();
-
-const BACKEND_API_KEY = process.env.BACKEND_API_KEY;
-const NEWS_API_KEY = process.env.NEWS_API_KEY;
 
 export const MultipleTokenInfos = async () => {
     try {
-        const tokenDetailsEssentials =
-            await fetchMultipleTokenDetails(STARKNET_TOKENS);
+        const tokenDetailsEssentials = await fetchMultipleTokenDetails(
+            STARKNET_TOKENS
+        );
         return (
             "# Here is some information about the market :\n" +
             JSON.stringify(tokenDetailsEssentials, null, 2)
@@ -52,6 +47,28 @@ export const MultipleTokenPriceFeeds = async (): Promise<string> => {
         "# Here are the token price feeds from the past three days: \n" +
         JSON.stringify(priceFeeds, null, 2)
     );
+};
+
+export const sendTradingInfo = async (tradingInfoDto, backendPort, apiKey) => {
+    try {
+        const response = await fetch(
+            `http://host.docker.internal:${backendPort}/api/trading-information`,
+            {
+                method: "POST",
+                headers: {
+                    "Content-Type": "application/json",
+                    "x-api-key": apiKey,
+                },
+                body: JSON.stringify(tradingInfoDto),
+            }
+        );
+        elizaLogger.log("Trading information saved");
+    } catch (error) {
+        console.error(
+            "Error saving trading information:",
+            error.response?.data || error.message
+        );
+    }
 };
 
 // async function getCurrentNews(searchTerm: string) {
@@ -99,9 +116,8 @@ export const tradeAction: Action = {
         } else {
             state = await runtime.updateRecentMessageState(state);
         }
-        const CONTAINER_ID =
-            process.env.CONTAINER_ID ?? os.hostname().slice(0, 12);
 
+        const CONTAINER_ID = process.env.CONTAINER_ID ?? "default";
         const tokenInfos = await MultipleTokenInfos();
         const tokenPrices = await MultipleTokenPriceFeeds();
 
@@ -129,12 +145,6 @@ export const tradeAction: Action = {
         try {
             const parsedDecision: TradeDecision = JSON.parse(response);
             const swap = parsedDecision.swap;
-            console.log("Should we trade:", parsedDecision.shouldTrade);
-            console.log("Token to sell:", swap.sellTokenAddress);
-            console.log("Token to buy:", swap.buyTokenAddress);
-            console.log("Amount:", swap.sellAmount);
-            console.log("Explanation:", parsedDecision.Explanation);
-            console.log("Tweet:", parsedDecision.Tweet);
 
             if (parsedDecision.shouldTrade === "yes") {
                 if (!isSwapContent(swap)) {
@@ -144,13 +154,6 @@ export const tradeAction: Action = {
                     return false;
                 }
                 try {
-                    elizaLogger.log(
-                        "buyTokenaddress : " + swap.buyTokenAddress
-                    );
-                    elizaLogger.log("sellAmount : " + swap.sellAmount);
-                    elizaLogger.log(
-                        "sellTokenAddress : " + swap.sellTokenAddress
-                    );
                     // Get quote
                     const quoteParams: QuoteRequest = {
                         sellTokenAddress: swap.sellTokenAddress,
@@ -209,11 +212,8 @@ export const tradeAction: Action = {
                         },
                     };
 
-                    console.log("trade object:", tradeObject);
-
                     // Convert to JSON string
-                    const message = JSON.stringify(tradeObject);
-                    console.log("message json stringified:", message);
+                    // const message = JSON.stringify(tradeObject);
 
                     // Create the DTO
                     const tradingInfoDto = {
@@ -221,26 +221,11 @@ export const tradeAction: Action = {
                         information: tradeObject,
                     };
 
-                    axios
-                        .post(
-                            `http://host.docker.internal:${process.env.BACKEND_PORT}/api/trading-information`,
-                            tradingInfoDto,
-                            {
-                                headers: {
-                                    "Content-Type": "application/json",
-                                    "x-api-key": BACKEND_API_KEY,
-                                },
-                            }
-                        )
-                        .then((res) =>
-                            console.log("Trading information saved:", res.data)
-                        )
-                        .catch((err) => {
-                            console.error(
-                                "Error saving trading information:",
-                                err.response?.data || err.message
-                            );
-                        });
+                    await sendTradingInfo(
+                        tradingInfoDto,
+                        process.env.BACKEND_PORT,
+                        process.env.BACKEND_API_KEY
+                    );
 
                     return true;
                 } catch (error) {
@@ -249,7 +234,7 @@ export const tradeAction: Action = {
                     return false;
                 }
             } else {
-                console.log("It is not relevant to trade at the moment.");
+                console.log("It is not relevant to trade at the moment."); // TOODO: add better and personnalized reason related to personnality
                 callback?.({
                     text: "It is not relevant to trade at the moment.",
                 });

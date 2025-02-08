@@ -5,43 +5,43 @@ export enum TOKENS {
 export const STARKNET_TOKENS = [
     {
         address:
-            "0x3b405a98c9e795d427fe82cdeeeed803f221b52471e3a757574a2b4180793ee",
+            "0x03b405a98c9e795d427fe82cdeeeed803f221b52471e3a757574a2b4180793ee",
         name: "BROTHER",
         decimals: 18,
     },
     {
         address:
-            "0x3fe2b97c1fd336e750087d68b9b867997fd64a2661ff3ca5a7c771641e8e7ac",
+            "0x03fe2b97c1fd336e750087d68b9b867997fd64a2661ff3ca5a7c771641e8e7ac",
         name: "BTC",
         decimals: 8,
     },
     {
         address:
-            "0x49d36570d4e46f48e99674bd3fcc84644ddd6b96f7c741b1562b82f9e004dc7",
+            "0x049d36570d4e46f48e99674bd3fcc84644ddd6b96f7c741b1562b82f9e004dc7",
         name: "ETH",
         decimals: 18,
     },
     {
         address:
-            "0x4718f5a0fc34cc1af16a1cdee98ffb20c31f5cd61d6ab07201858f4287c938d",
+            "0x04718f5a0fc34cc1af16a1cdee98ffb20c31f5cd61d6ab07201858f4287c938d",
         name: "STRK",
         decimals: 18,
     },
     {
         address:
-            "0x124aeb495b947201f5fac96fd1138e326ad86195b98df6dec9009158a533b49",
+            "0x0124aeb495b947201f5fac96fd1138e326ad86195b98df6dec9009158a533b49",
         name: "LORDS",
         decimals: 18,
     },
     {
         address:
-            "0x68f5c6a61780768455de69077e07e89787839bf8166decfbf92b645209c0fb8",
+            "0x068f5c6a61780768455de69077e07e89787839bf8166decfbf92b645209c0fb8",
         name: "USDT",
         decimals: 6,
     },
     {
         address:
-            "0x53c91253bc9682c04929ca02ed00b3e423f6710d2ee7e0d5ebb06f3ecf368a8",
+            "0x053c91253bc9682c04929ca02ed00b3e423f6710d2ee7e0d5ebb06f3ecf368a8",
         name: "USDC",
         decimals: 6,
     },

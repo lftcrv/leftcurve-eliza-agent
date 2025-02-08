@@ -16,13 +16,7 @@ import {
     type TokenRecommendation,
     type TradePerformance,
     TrustScoreDatabase,
-    RecommenderMetrics,
-    TokenPerformance,
-    TradePerformance,
-    TokenRecommendation,
 } from "@elizaos/plugin-trustdb";
-import { settings } from "@elizaos/core";
-import { IAgentRuntime, Memory, Provider, State } from "@elizaos/core";
 import { getTokenBalance } from "../utils/index.ts";
 import type { TokenProvider } from "./token.ts";
 import { WalletProvider } from "./portfolioProvider.ts";

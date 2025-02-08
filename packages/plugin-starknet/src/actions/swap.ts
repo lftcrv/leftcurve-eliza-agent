@@ -26,18 +26,22 @@ interface SwapContent {
 }
 
 export function isSwapContent(content: SwapContent): content is SwapContent {
+    // Validate types
     const validTypes =
         typeof content.sellTokenAddress === "string" &&
         typeof content.buyTokenAddress === "string" &&
         typeof content.sellAmount === "string";
+    if (!validTypes) {
+        return false;
+    }
 
-    if (!validTypes) return false;
-
-    const addressRegex = /^0x[0-9a-f]{62,64}$/i;
-
+    // Validate addresses (must be 32-bytes long with 0x prefix)
     const validAddresses =
-        addressRegex.test(content.sellTokenAddress) &&
-        addressRegex.test(content.buyTokenAddress);
+        content.sellTokenAddress.startsWith("0x") &&
+        content.sellTokenAddress.length === 66 &&
+        content.buyTokenAddress.startsWith("0x") &&
+        content.buyTokenAddress.length === 66;
+
     return validAddresses;
 }
 
@@ -116,11 +120,8 @@ export const executeSwap: Action = {
             callback?.({ text: "Invalid swap content, please try again." });
             return false;
         }
+
         try {
-            callback?.({ text: "OOOOOOOOOOOOKKKK 00000." });
-            elizaLogger.log("buyTokenaddress : " + response.buyTokenAddress);
-            elizaLogger.log("sellAmount : " + response.sellAmount);
-            elizaLogger.log("sellTokenAddress : " + response.sellTokenAddress);
             // Get quote
             const quoteParams: QuoteRequest = {
                 sellTokenAddress: response.sellTokenAddress,
@@ -129,10 +130,7 @@ export const executeSwap: Action = {
             };
 
             const quote = await fetchQuotes(quoteParams);
-            callback?.({ text: "OOOOOOOOOOOOKKKK 1111." });
-            elizaLogger.log("ooookkkkk 11111111111");
-            //getStarknetAccount(runtime);
-            elizaLogger.log("get starknet account OKKKK");
+
             // Execute swap
             const swapResult = await executeAvnuSwap(
                 getStarknetAccount(runtime),
@@ -147,8 +145,7 @@ export const executeSwap: Action = {
                 `Swap completed successfully! tx: ${swapResult.transactionHash}`
             );
             callback?.({
-                text:
-                    `Swap completed successfully! tx: ${swapResult.transactionHash}`,
+                text: `Swap completed successfully! tx: ${swapResult.transactionHash}`,
             });
 
             return true;
