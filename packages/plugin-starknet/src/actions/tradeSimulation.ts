@@ -17,21 +17,23 @@ import { STARKNET_TOKENS } from "../utils/constants.ts";
 import { TradeDecision } from "./types.ts";
 import { isSwapContent } from "./swap.ts";
 import { shouldTradeTemplateInstruction } from "./templates.ts";
-import { MultipleTokenInfos, MultipleTokenPriceFeeds } from "./trade.ts";
-import axios from "axios";
-import os from "os";
-const BACKEND_API_KEY = process.env.BACKEND_API_KEY;
+import {
+    MultipleTokenInfos,
+    MultipleTokenPriceFeeds,
+    sendTradingInfo,
+} from "./trade.ts";
+import { RuntimeWithWallet, WalletAdapter } from "../walletAdapter.ts";
 
 export async function getSimulatedWalletBalances(
     runtime: IAgentRuntime
 ): Promise<string> {
-    const db = runtime.databaseAdapter;
+    const runtimeWithWallet = runtime as RuntimeWithWallet;
+    const walletAdapter = new WalletAdapter(runtime.databaseAdapter.db);
 
     try {
-        // Wait for balance retrieval
-        const balanceRow = await (
-            db as SqliteDatabaseAdapter
-        ).getWalletBalances(runtime.agentId);
+        const balanceRow = await walletAdapter.getWalletBalances(
+            runtime.agentId
+        );
 
         if (!balanceRow) {
             return "No wallet data available";
@@ -78,8 +80,7 @@ export const tradeSimulationAction: Action = {
         } else {
             state = await runtime.updateRecentMessageState(state);
         }
-        const CONTAINER_ID =
-            process.env.CONTAINER_ID ?? os.hostname().slice(0, 12);
+        const CONTAINER_ID = process.env.CONTAINER_ID ?? "default";
 
         const walletBalances = await getSimulatedWalletBalances(runtime);
 
@@ -112,6 +113,7 @@ export const tradeSimulationAction: Action = {
             if (parsedDecision.shouldTrade === "yes") {
                 const swap = parsedDecision.swap;
                 if (!isSwapContent(swap)) {
+                    elizaLogger.warn("invalid swap content");
                     callback?.({
                         text: "Invalid swap content, please try again.",
                     });
@@ -135,9 +137,10 @@ export const tradeSimulationAction: Action = {
                 }
 
                 // Update simulated wallet with the quote results
-                await (
-                    runtime.databaseAdapter as SqliteDatabaseAdapter
-                ).updateSimulatedWallet(
+                const walletAdapter = new WalletAdapter(
+                    runtime.databaseAdapter.db
+                );
+                await walletAdapter.updateSimulatedWallet(
                     runtime.agentId,
                     bestQuote.sellTokenAddress,
                     Number(bestQuote.sellAmount),
@@ -169,18 +172,15 @@ export const tradeSimulationAction: Action = {
                 };
 
                 try {
-                    await axios.post(
-                        `http://host.docker.internal:${process.env.BACKEND_PORT}/api/trading-information`,
-                        {
-                            runtimeAgentId: state.agentId,
-                            information: tradeObject,
-                        },
-                        {
-                            headers: {
-                                "Content-Type": "application/json",
-                                "x-api-key": BACKEND_API_KEY,
-                            },
-                        }
+                    const tradingInfoDto = {
+                        runtimeAgentId: state.agentId,
+                        information: tradeObject,
+                    };
+
+                    await sendTradingInfo(
+                        tradingInfoDto,
+                        process.env.BACKEND_PORT,
+                        process.env.BACKEND_API_KEY
                     );
                     return true;
                 } catch (error) {
@@ -198,18 +198,10 @@ export const tradeSimulationAction: Action = {
                 };
 
                 try {
-                    await axios.post(
-                        `http://host.docker.internal:${process.env.BACKEND_PORT}/api/trading-information`,
-                        {
-                            runtimeAgentId: state.agentId,
-                            information: noTradeObject,
-                        },
-                        {
-                            headers: {
-                                "Content-Type": "application/json",
-                                "x-api-key": BACKEND_API_KEY,
-                            },
-                        }
+                    await sendTradingInfo(
+                        noTradeObject,
+                        process.env.BACKEND_PORT,
+                        process.env.BACKEND_API_KEY
                     );
                     callback?.({
                         text: JSON.stringify(parsedDecision, null, 2),
