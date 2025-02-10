@@ -8,6 +8,7 @@ import {
     composeContext,
     elizaLogger,
     UUID,
+    WalletAdapter,
 } from "@elizaos/core";
 import { ParadexState } from "../types";
 import { getMarketsAction } from "./markets";
@@ -76,7 +77,8 @@ export const manageWatchlistAction: Action = {
 
         // Get current watchlist from database
         elizaLogger.info("Fetching current watchlist...");
-        const currentWatchlist = await runtime.databaseAdapter.getWatchlist(
+        const walletAdapter = new WalletAdapter(runtime.databaseAdapter.db);
+        const currentWatchlist = await walletAdapter.getWatchlist(
             message.roomId
         );
         elizaLogger.success("Current watchlist:", currentWatchlist);
@@ -186,7 +188,7 @@ export const manageWatchlistAction: Action = {
         });
 
         // Save updated watchlist to database
-        await runtime.databaseAdapter.upsertWatchlist({
+        await walletAdapter.upsertWatchlist({
             room_id: message.roomId,
             user_id: message.userId,
             markets: newWatchlist,

@@ -1146,14 +1146,6 @@ export interface IDatabaseAdapter {
     createKnowledge(knowledge: RAGKnowledgeItem): Promise<void>;
     removeKnowledge(id: UUID): Promise<void>;
     clearKnowledge(agentId: UUID, shared?: boolean): Promise<void>;
-
-    getWatchlist?: (roomId: UUID) => Promise<string[]>;
-    upsertWatchlist?: (entry: {
-        room_id: UUID;
-        user_id: UUID;
-        markets: string[];
-    }) => Promise<void>;
-    removeWatchlist?: (roomId: UUID) => Promise<void>;
 }
 
 export interface IDatabaseCacheAdapter {

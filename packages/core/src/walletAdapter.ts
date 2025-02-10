@@ -1,6 +1,8 @@
-import { elizaLogger, IAgentRuntime, type UUID } from "@elizaos/core";
 import type { Statement } from "better-sqlite3";
+import { UUID } from "crypto";
 import { v4 } from "uuid";
+import elizaLogger from "./logger";
+import { IAgentRuntime } from "./types";
 
 export interface RuntimeWithWallet extends IAgentRuntime {
     walletAdapter?: IWalletAdapter;

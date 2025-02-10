@@ -9,7 +9,7 @@ export const paradexPlugin: Plugin = {
     name: "paradex",
     description: "Paradex Plugin for Eliza",
     actions: [manageWatchlistAction, getWatchlistAction],
-    providers: [marketDataProvider, bboProvider, watchlistProvider],
+    providers: [watchlistProvider],
 };
 
 export default paradexPlugin;

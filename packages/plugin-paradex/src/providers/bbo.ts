@@ -4,6 +4,7 @@ import {
     Memory,
     State,
     elizaLogger,
+    WalletAdapter,
 } from "@elizaos/core";
 import { ParadexState } from "../types";
 
@@ -23,7 +24,8 @@ export const bboProvider: Provider = {
     ) => {
         try {
             // Fetch watchlist from database
-            const watchlist = await runtime.databaseAdapter.getWatchlist(
+            const walletAdapter = new WalletAdapter(runtime.databaseAdapter.db);
+            const watchlist = await walletAdapter.getWatchlist(
                 message.roomId
             );
 

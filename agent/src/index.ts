@@ -49,6 +49,7 @@ import {
     settings,
     stringToUuid,
     validateCharacterConfig,
+    WalletAdapter,
 } from "@elizaos/core";
 import { zgPlugin } from "@elizaos/plugin-0g";
 import { footballPlugin } from "@elizaos/plugin-football";
@@ -1031,7 +1032,7 @@ export async function createAgent(
             // getSecret(character, "IQSOlRPC")
             //     ? elizaCodeinPlugin
             //     : null,
-            // bootstrapPlugin,
+            bootstrapPlugin,
             // getSecret(character, "CDP_API_KEY_NAME") &&
             // getSecret(character, "CDP_API_KEY_PRIVATE_KEY") &&
             // getSecret(character, "CDP_AGENT_KIT_NETWORK")
@@ -1419,9 +1420,9 @@ async function startAgent(
         // start services/plugins/process knowledge
         await runtime.initialize();
 
-        await (db as SqliteDatabaseAdapter).initSimulatedWallet(
-            runtime.agentId
-        );
+        const walletAdapter = new WalletAdapter(runtime.databaseAdapter.db);
+
+        await walletAdapter.initSimulatedWallet(runtime.agentId);
 
         //await db.updateSimulatedWallet(
         //    runtime.agentId,

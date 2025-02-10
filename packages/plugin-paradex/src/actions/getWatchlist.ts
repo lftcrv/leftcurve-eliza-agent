@@ -6,6 +6,7 @@ import {
     ModelClass,
     generateText,
     composeContext,
+    WalletAdapter
 } from "@elizaos/core";
 
 const responseTemplate = `
@@ -28,7 +29,8 @@ export const getWatchlistAction: Action = {
     handler: async (runtime: IAgentRuntime, message: Memory) => {
         try {
             elizaLogger.info("Fetching watchlist...");
-            const watchlist = await runtime.databaseAdapter.getWatchlist(
+            const walletAdapter = new WalletAdapter(runtime.databaseAdapter.db);
+            const watchlist = await walletAdapter.getWatchlist(
                 message.roomId
             );
 
