@@ -27,29 +27,6 @@ export class SqliteDatabaseAdapter
     extends DatabaseAdapter<Database>
     implements IDatabaseCacheAdapter
 {
-    private statements = new Map<string, Statement>();
-
-    private prepareStatement(sql: string): Statement {
-        let stmt = this.statements.get(sql);
-        if (!stmt) {
-            stmt = this.db.prepare(sql);
-            this.statements.set(sql, stmt);
-        }
-        return stmt;
-    }
-
-    private withTransaction<T>(operation: () => T): T {
-        try {
-            this.db.prepare("BEGIN").run();
-            const result = operation();
-            this.db.prepare("COMMIT").run();
-            return result;
-        } catch (error) {
-            this.db.prepare("ROLLBACK").run();
-            throw error;
-        }
-    }
-
     private readonly WATCHLIST_STATEMENTS = {
         create: `
             CREATE TABLE IF NOT EXISTS watchlists (
@@ -280,57 +257,59 @@ export class SqliteDatabaseAdapter
 
     async createMemory(memory: Memory, tableName: string): Promise<void> {
         try {
-          let isUnique = true;
-          let embeddingVector: number[];
-      
-          if (memory.embedding && memory.embedding.length > 0) {
-            embeddingVector = memory.embedding;
-            // Check similarity only if real embedding
-            const similarMemories = await this.searchMemoriesByEmbedding(
-              memory.embedding,
-              {
-                tableName,
-                agentId: memory.agentId,
-                roomId: memory.roomId,
-                match_threshold: 0.95,
-                count: 1,
-              }
-            );
-            isUnique = similarMemories.length === 0;
-          } else {
-            // Create fake embedding if none provided
-            embeddingVector = Array(384).fill(0);
-            isUnique = true; // Fake embeddings are always unique since they can't be searched
-          }
-      
-          const content = JSON.stringify(memory.content);
-          const createdAt = memory.createdAt ?? Date.now();
-      
-          const sql = `
+            let isUnique = true;
+            let embeddingVector: number[];
+
+            if (memory.embedding && memory.embedding.length > 0) {
+                embeddingVector = memory.embedding;
+                // Check similarity only if real embedding
+                const similarMemories = await this.searchMemoriesByEmbedding(
+                    memory.embedding,
+                    {
+                        tableName,
+                        agentId: memory.agentId,
+                        roomId: memory.roomId,
+                        match_threshold: 0.95,
+                        count: 1,
+                    }
+                );
+                isUnique = similarMemories.length === 0;
+            } else {
+                // Create fake embedding if none provided
+                embeddingVector = Array(384).fill(0);
+                isUnique = true; // Fake embeddings are always unique since they can't be searched
+            }
+
+            const content = JSON.stringify(memory.content);
+            const createdAt = memory.createdAt ?? Date.now();
+
+            const sql = `
             INSERT OR REPLACE INTO memories (
               id, type, content, embedding, userId, roomId, agentId,
               \`unique\`, createdAt
             ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)
           `;
-      
-          this.db.prepare(sql).run(
-            memory.id ?? v4(),
-            tableName,
-            content,
-            Buffer.from(new Float32Array(embeddingVector).buffer),
-            memory.userId,
-            memory.roomId,
-            memory.agentId,
-            isUnique ? 1 : 0,
-            createdAt
-          );
-      
-          elizaLogger.success("Memory created successfully");
+
+            this.db
+                .prepare(sql)
+                .run(
+                    memory.id ?? v4(),
+                    tableName,
+                    content,
+                    Buffer.from(new Float32Array(embeddingVector).buffer),
+                    memory.userId,
+                    memory.roomId,
+                    memory.agentId,
+                    isUnique ? 1 : 0,
+                    createdAt
+                );
+
+            elizaLogger.success("Memory created successfully");
         } catch (error) {
-          elizaLogger.error("Error creating memory:", error);
-          throw error;
+            elizaLogger.error("Error creating memory:", error);
+            throw error;
         }
-      }
+    }
 
     async searchMemories(params: {
         tableName: string;
@@ -1131,70 +1110,6 @@ export class SqliteDatabaseAdapter
                 `Error clearing knowledge for agent ${agentId}:`,
                 error
             );
-            throw error;
-        }
-    }
-
-    async getWatchlist(roomId: UUID): Promise<string[]> {
-        try {
-            elizaLogger.info(`Fetching watchlist for room ${roomId}...`);
-
-            const stmt = this.prepareStatement(this.WATCHLIST_STATEMENTS.get);
-            const result = stmt.get(roomId) as { markets: string } | undefined;
-
-            if (!result) {
-                elizaLogger.info("No watchlist found for this room");
-                return [];
-            }
-
-            const markets = JSON.parse(result.markets);
-            elizaLogger.success("Found watchlist:", markets);
-            return markets;
-        } catch (error) {
-            elizaLogger.error("Error getting watchlist:", error);
-            return [];
-        }
-    }
-
-    async upsertWatchlist(entry: {
-        room_id: UUID;
-        user_id: UUID;
-        markets: string[];
-    }): Promise<void> {
-        try {
-            elizaLogger.info("Upserting watchlist...", entry);
-
-            return this.withTransaction(() => {
-                const stmt = this.prepareStatement(
-                    this.WATCHLIST_STATEMENTS.upsert
-                );
-                stmt.run(
-                    v4(),
-                    entry.room_id,
-                    entry.user_id,
-                    JSON.stringify(entry.markets),
-                    Date.now()
-                );
-                elizaLogger.success("Watchlist saved successfully");
-            });
-        } catch (error) {
-            elizaLogger.error("Error saving watchlist:", error);
-            throw error;
-        }
-    }
-
-    async removeWatchlist(roomId: UUID): Promise<void> {
-        try {
-            elizaLogger.info(`Removing watchlist for room ${roomId}...`);
-
-            const stmt = this.prepareStatement(
-                this.WATCHLIST_STATEMENTS.delete
-            );
-            stmt.run(roomId);
-
-            elizaLogger.success("Watchlist removed successfully");
-        } catch (error) {
-            elizaLogger.error("Error removing watchlist:", error);
             throw error;
         }
     }

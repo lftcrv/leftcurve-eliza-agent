@@ -145,8 +145,7 @@ export const executeSwap: Action = {
                 `Swap completed successfully! tx: ${swapResult.transactionHash}`
             );
             callback?.({
-                text:
-                    `Swap completed successfully! tx: ${swapResult.transactionHash}`,
+                text: `Swap completed successfully! tx: ${swapResult.transactionHash}`,
             });
 
             return true;
