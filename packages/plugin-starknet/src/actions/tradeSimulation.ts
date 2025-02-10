@@ -11,11 +11,9 @@ import {
     State,
 } from "@elizaos/core";
 import { fetchQuotes, QuoteRequest } from "@avnu/avnu-sdk";
-import { SqliteDatabaseAdapter } from "@elizaos/adapter-sqlite";
 import { validateStarknetConfig } from "../environment.ts";
 import { STARKNET_TOKENS } from "../utils/constants.ts";
 import { TradeDecision } from "./types.ts";
-import { isSwapContent } from "./swap.ts";
 import { shouldTradeTemplateInstruction } from "./templates.ts";
 import {
     MultipleTokenInfos,
@@ -23,6 +21,7 @@ import {
     sendTradingInfo,
 } from "./trade.ts";
 import { RuntimeWithWallet, WalletAdapter } from "../walletAdapter.ts";
+import { isSwapContent } from "../utils/index.ts";
 
 export async function getSimulatedWalletBalances(
     runtime: IAgentRuntime
@@ -113,20 +112,23 @@ export const tradeSimulationAction: Action = {
             if (parsedDecision.shouldTrade === "yes") {
                 const swap = parsedDecision.swap;
                 if (!isSwapContent(swap)) {
-                    elizaLogger.warn("invalid swap content");
-                    callback?.({
-                        text: "Invalid swap content, please try again.",
-                    });
+                    elizaLogger.warn("invalid swap content");;
                     return false;
                 }
-
+                const sellTokenAddress = STARKNET_TOKENS.find(
+                    (t) =>
+                        t.name === swap.sellTokenName
+                ).address;
+                const buyTokenAddress = STARKNET_TOKENS.find(
+                    (t) =>
+                        t.name === swap.buyTokenName
+                ).address;
                 // Get quote for the proposed trade
                 const quoteParams: QuoteRequest = {
-                    sellTokenAddress: swap.sellTokenAddress,
-                    buyTokenAddress: swap.buyTokenAddress,
+                    sellTokenAddress: sellTokenAddress,
+                    buyTokenAddress: buyTokenAddress,
                     sellAmount: BigInt(swap.sellAmount),
                 };
-
                 const quotes = await fetchQuotes(quoteParams);
                 const bestQuote = quotes[0];
 
@@ -142,9 +144,9 @@ export const tradeSimulationAction: Action = {
                 );
                 await walletAdapter.updateSimulatedWallet(
                     runtime.agentId,
-                    bestQuote.sellTokenAddress,
+                    sellTokenAddress,
                     Number(bestQuote.sellAmount),
-                    bestQuote.buyTokenAddress,
+                    buyTokenAddress,
                     Number(bestQuote.buyAmount)
                 );
 
@@ -152,18 +154,10 @@ export const tradeSimulationAction: Action = {
                     tradeId: Date.now().toString(),
                     containerId: CONTAINER_ID,
                     trade: {
-                        sellTokenName: STARKNET_TOKENS.find(
-                            (t) =>
-                                t.address.toLowerCase() ===
-                                bestQuote.sellTokenAddress.toLowerCase()
-                        ).name,
-                        sellTokenAddress: bestQuote.sellTokenAddress,
-                        buyTokenName: STARKNET_TOKENS.find(
-                            (t) =>
-                                t.address.toLowerCase() ===
-                                bestQuote.buyTokenAddress.toLowerCase()
-                        ).name,
-                        buyTokenAddress: bestQuote.buyTokenAddress,
+                        sellTokenName: swap.sellTokenName,
+                        sellTokenAddress: sellTokenAddress,
+                        buyTokenName: swap.buyTokenName,
+                        buyTokenAddress: buyTokenAddress,
                         sellAmount: bestQuote.sellAmount.toString(),
                         buyAmount: bestQuote.buyAmount.toString(),
                         tradePriceUSD: bestQuote.buyTokenPriceInUsd || "0",
@@ -176,7 +170,6 @@ export const tradeSimulationAction: Action = {
                         runtimeAgentId: state.agentId,
                         information: tradeObject,
                     };
-
                     await sendTradingInfo(
                         tradingInfoDto,
                         process.env.BACKEND_PORT,
@@ -184,7 +177,6 @@ export const tradeSimulationAction: Action = {
                     );
                     return true;
                 } catch (error) {
-                    console.error("Error saving trading information:", error);
                     return false;
                 }
             } else {
@@ -203,9 +195,6 @@ export const tradeSimulationAction: Action = {
                         process.env.BACKEND_PORT,
                         process.env.BACKEND_API_KEY
                     );
-                    callback?.({
-                        text: JSON.stringify(parsedDecision, null, 2),
-                    });
                     return true;
                 } catch (error) {
                     console.error("Error saving no-trade information:", error);
@@ -214,7 +203,6 @@ export const tradeSimulationAction: Action = {
             }
         } catch (error) {
             console.error("Error parsing JSON response:", error);
-            callback?.({ text: "Error processing trade decision response" });
             return false;
         }
     },

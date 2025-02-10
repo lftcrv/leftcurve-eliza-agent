@@ -1,5 +1,4 @@
 import type { Plugin } from "@elizaos/core";
-import { executeSwap } from "./actions/swap";
 import transfer from "./actions/transfer";
 import { deployToken } from "./actions/unruggable";
 import transferSubdomain from "./actions/subdomain";

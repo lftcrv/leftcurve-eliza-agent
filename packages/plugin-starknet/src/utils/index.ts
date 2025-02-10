@@ -2,6 +2,7 @@ import { elizaLogger, type IAgentRuntime } from "@elizaos/core";
 import { type Fraction, Percent } from "@uniswap/sdk-core";
 import { Account, Contract, RpcProvider } from "starknet";
 import { STARKNET_TOKENS } from "./constants";
+import { SwapContent } from "../actions/types";
 
 export const getTokenBalance = async (
     runtime: IAgentRuntime,
@@ -138,4 +139,16 @@ export function formatTokenAmount(
         return null;
     }
     return Number(rawAmount) / 10 ** token.decimals;
+}
+
+export function isSwapContent(content: SwapContent): content is SwapContent {
+    // Validate types
+    const validTypes =
+        typeof content.sellTokenName === "string" &&
+        typeof content.buyTokenName === "string" &&
+        typeof content.sellAmount === "string";
+    if (!validTypes) {
+        return false;
+    }
+    return true;
 }

@@ -153,6 +153,7 @@ export class WalletAdapter implements IWalletAdapter {
 
           const buySql = `UPDATE agent_balances SET "${buyAddress}" = "${buyAddress}" + ? WHERE agentID = ?`;
           this.db.prepare(buySql).run(buyAmount, agentId);
+          console.log("ETAPE updateSimulatedWallet OKKKKKKK");
       });
 
       tx();
