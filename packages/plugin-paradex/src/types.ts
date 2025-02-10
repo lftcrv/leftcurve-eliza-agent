@@ -10,4 +10,7 @@ export interface ParadexState {
             timestamp: number;
         };
     };
+    jwt?: string;
+    jwtExpiration?: number;
+    isOnboarded?: boolean;
 }

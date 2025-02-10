@@ -17,7 +17,6 @@ import {
 } from "@avnu/avnu-sdk";
 import { getStarknetAccount } from "../utils/index.ts";
 import { validateStarknetConfig } from "../environment.ts";
-import axios from "axios";
 import { TradeDecision } from "./types.ts";
 import { STARKNET_TOKENS } from "../utils/constants.ts";
 import { shouldTradeTemplateInstruction } from "./templates.ts";
