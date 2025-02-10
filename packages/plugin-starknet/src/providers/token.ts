@@ -30,7 +30,7 @@ export const PORTFOLIO_TOKENS = {
 
     BROTHER: {
         address:
-            "0x3b405a98c9e795d427fe82cdeeeed803f221b52471e3a757574a2b4180793ee",
+            "0x03b405a98c9e795d427fe82cdeeeed803f221b52471e3a757574a2b4180793ee",
         coingeckoId: "starknet-brother",
         decimals: 18,
     },
@@ -48,7 +48,7 @@ export const PORTFOLIO_TOKENS = {
     },
     LORDS: {
         address:
-            "0x124aeb495b947201f5fac96fd1138e326ad86195b98df6dec9009158a533b49",
+            "0x0124aeb495b947201f5fac96fd1138e326ad86195b98df6dec9009158a533b49",
         coingeckoId: "lords",
         decimals: 18,
     },
