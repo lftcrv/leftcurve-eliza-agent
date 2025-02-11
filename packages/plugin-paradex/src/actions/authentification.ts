@@ -4,105 +4,125 @@ import {
     Memory,
     State,
     elizaLogger,
-    UUID,
-    WalletAdapter,
 } from "@elizaos/core";
-import {
-    shortString,
-    ec,
-    typedData as starkTypedData,
-    Account,
-    RpcProvider,
-} from "starknet";
-import { ParadexState } from "../types";
-import * as Paradex from "@paradex/sdk";
+import { spawn } from "child_process";
+import path from "path";
 
-interface ParadexAuthState extends State, ParadexState {
+interface ParadexState extends State {
     starknetAccount?: string;
     publicKey?: string;
     lastMessage?: string;
+    jwtToken?: string;
+    jwtExpiry?: number;
 }
 
-// interface OnboardingRequest {
-//     public_key: string;
-// }
+interface AuthResponse {
+    jwt_token: string;
+    expiry: number;
+    account_address: string;
+    error?: string;
+}
 
-// interface AuthResponse {
-//     jwt_token: string;
-// }
+class ParadexAuthError extends Error {
+    constructor(message: string, public details?: any) {
+        super(message);
+        this.name = "ParadexAuthError";
+    }
+}
 
-// interface SystemConfig {
-//     apiBaseUrl: string;
-//     starknet: {
-//         chainId: string;
-//     };
-// }
+const getVenvPythonPath = () => {
+    // Check if we're on Windows
+    const isWindows = process.platform === "win32";
 
-// const JWT_REFRESH_THRESHOLD = 3 * 60 * 1000; // Refresh JWT 3 minutes before expiry
+    // Get the plugin's src directory
+    const srcDir = path.resolve(__dirname);
+    // Go up one level to get to the plugin root
+    const pluginDir = path.resolve(srcDir, "..");
 
-// // Signature functions according to Paradex impl
-// function buildParadexDomain(starknetChainId: string) {
-//     return {
-//         name: "Paradex",
-//         chainId: starknetChainId,
-//         version: "1",
-//     };
-// }
+    // Construct the path to the Python executable in the virtual environment
+    const venvPath = isWindows
+        ? path.join(pluginDir, ".venv", "Scripts", "python.exe")
+        : path.join(pluginDir, ".venv", "bin", "python3");
 
-// function buildOnboardingTypedData(starknetChainId: string) {
-//     const paradexDomain = buildParadexDomain(starknetChainId);
-//     return {
-//         domain: paradexDomain,
-//         primaryType: "Constant",
-//         types: {
-//             StarkNetDomain: [
-//                 { name: "name", type: "felt" },
-//                 { name: "chainId", type: "felt" },
-//                 { name: "version", type: "felt" },
-//             ],
-//             Constant: [{ name: "action", type: "felt" }],
-//         },
-//         message: {
-//             action: "Onboarding",
-//         },
-//     };
-// }
+    return venvPath;
+};
 
-// function buildAuthTypedData(
-//     message: Record<string, unknown>,
-//     starknetChainId: string
-// ) {
-//     const paradexDomain = buildParadexDomain(starknetChainId);
-//     return {
-//         domain: paradexDomain,
-//         primaryType: "Request",
-//         types: {
-//             StarkNetDomain: [
-//                 { name: "name", type: "felt" },
-//                 { name: "chainId", type: "felt" },
-//                 { name: "version", type: "felt" },
-//             ],
-//             Request: [
-//                 { name: "method", type: "felt" },
-//                 { name: "path", type: "felt" },
-//                 { name: "body", type: "felt" },
-//                 { name: "timestamp", type: "felt" },
-//                 { name: "expiration", type: "felt" },
-//             ],
-//         },
-//         message,
-//     };
-// }
+const getJwtToken = (ethPrivateKey: string): Promise<AuthResponse> => {
+    return new Promise((resolve, reject) => {
+        const pythonPath = getVenvPythonPath();
+        // Path to your Python script relative to the src directory
+        const scriptPath = path.join(__dirname, "onboarding.py");
 
-// function signatureFromTypedData(
-//     starknetAccount: string,
-//     privateKey: string,
-//     typedData: any
-// ) {
-//     const msgHash = starkTypedData.getMessageHash(typedData, starknetAccount);
-//     const { r, s } = ec.starkCurve.sign(msgHash, privateKey);
-//     return JSON.stringify([r.toString(), s.toString()]);
-// }
+        let stdout = "";
+        let stderr = "";
+
+        const pythonProcess = spawn(pythonPath, [scriptPath], {
+            env: {
+                ...process.env,
+                PYTHONUNBUFFERED: "1",
+                PYTHONPATH: path.resolve(__dirname), // Set to src directory
+                ETHEREUM_PRIVATE_KEY: ethPrivateKey, // Pass private key as env var
+            },
+        });
+
+        pythonProcess.stdout.on("data", (data) => {
+            stdout += data.toString();
+        });
+
+        pythonProcess.stderr.on("data", (data) => {
+            stderr += data.toString();
+            // Log stderr in real-time for debugging
+            elizaLogger.debug("Python stderr:", stderr);
+        });
+
+        pythonProcess.on("close", (code) => {
+            if (code === 0 && stdout) {
+                try {
+                    const result = JSON.parse(stdout);
+                    resolve(result);
+                } catch (e) {
+                    reject(
+                        new ParadexAuthError(
+                            "Failed to parse Python script output",
+                            { stdout, stderr }
+                        )
+                    );
+                }
+            } else {
+                try {
+                    const error = stderr
+                        ? JSON.parse(stderr)
+                        : { error: "Unknown error occurred" };
+                    reject(new ParadexAuthError(error.error, error));
+                } catch (e) {
+                    reject(
+                        new ParadexAuthError(
+                            stderr || "Script failed with no error message"
+                        )
+                    );
+                }
+            }
+        });
+
+        pythonProcess.on("error", (error) => {
+            elizaLogger.error("Python process error:", error);
+            reject(
+                new ParadexAuthError(
+                    `Failed to execute Python script: ${error.message}`,
+                    error
+                )
+            );
+        });
+
+        // Set a timeout
+        const timeout = setTimeout(() => {
+            pythonProcess.kill();
+            reject(new ParadexAuthError("Authentication timed out"));
+        }, 30000); // 30 seconds timeout
+
+        pythonProcess.on("close", () => clearTimeout(timeout));
+    });
+};
 
 export const paradexAuthAction: Action = {
     name: "PARADEX_AUTH",
@@ -117,73 +137,64 @@ export const paradexAuthAction: Action = {
     handler: async (
         runtime: IAgentRuntime,
         message: Memory,
-        state?: ParadexAuthState
+        state?: ParadexState
     ) => {
         elizaLogger.info("Starting Paradex authentication...");
 
         if (!state) {
-            state = (await runtime.composeState(message)) as ParadexAuthState;
+            state = (await runtime.composeState(message)) as ParadexState;
         }
 
         try {
-            const walletAdapter = new WalletAdapter(runtime.databaseAdapter.db);
-
-            // 1. Fetch Paradex config
-            const config = await Paradex.Config.fetchConfig("prod");
-            elizaLogger.info("Paradex config fetched");
-
-            // 2. Create Paraclear provider
-            const paraclearProvider =
-                new Paradex.ParaclearProvider.DefaultProvider(config);
-            elizaLogger.info("Paraclear provider created");
-
-            // 3. Initialize StarkNet account
-            const starknetProvider = new RpcProvider({
-                nodeUrl: "https://1rpc.io/starknet",
-            });
-
-            const starknetAddress = runtime.getSetting("STARKNET_ADDRESS");
-            const privateKey = runtime.getSetting("STARKNET_PRIVATE_KEY");
-
-            elizaLogger.info("starknetAddress", starknetAddress);
-            elizaLogger.info("privateKey", privateKey);
-
-            if (!starknetAddress || !privateKey) {
-                throw new Error("Missing StarkNet credentials");
+            // Get private key from secure environment variable
+            const ethPrivateKey = process.env.ETHEREUM_PRIVATE_KEY;
+            if (!ethPrivateKey) {
+                throw new ParadexAuthError(
+                    "ETHEREUM_PRIVATE_KEY environment variable not set"
+                );
             }
 
-            const baseAccount = new Account(
-                starknetProvider,
-                starknetAddress,
-                privateKey,
-                "1"
-            );
+            // Execute Python script
+            const result = await getJwtToken(ethPrivateKey);
 
-            // 4. Derive Paradex account
-            const paradexAccount = await Paradex.Account.fromStarknetAccount({
-                provider: paraclearProvider,
-                config,
-                account: baseAccount,
-                starknetProvider,
-            });
+            if (result.jwt_token) {
+                state.jwtToken = result.jwt_token;
+                state.jwtExpiry = result.expiry;
+                state.starknetAccount = result.account_address;
+                elizaLogger.info("Successfully obtained JWT token");
 
-            elizaLogger.info(
-                "Paradex account derived:",
-                paradexAccount.address
-            );
+                // // Schedule token refresh before expiry (5 minutes before)
+                // const refreshTime =
+                //     result.expiry * 1000 - Date.now() - 5 * 60 * 1000;
+                // if (refreshTime > 0) {
+                //     setTimeout(() => {
+                //         void runtime.processAction(
+                //             "PARADEX_AUTH",
+                //             message,
+                //             state
+                //         );
+                //     }, refreshTime);
+                // }
 
-            // Test: Get account balance
-            const balance = await Paradex.Paraclear.getTokenBalance({
-                config,
-                provider: paraclearProvider,
-                account: paradexAccount,
-                token: "USDC",
-            });
-
-            elizaLogger.info("Account USDC balance:", balance.size);
+                return true;
+            } else {
+                throw new ParadexAuthError(
+                    "Failed to get JWT token from Python script"
+                );
+            }
         } catch (error) {
-            elizaLogger.error("Paradex authentication error:", error);
-            console.log("error:", error);
+            if (error instanceof ParadexAuthError) {
+                elizaLogger.error(
+                    "Paradex authentication error:",
+                    error.message,
+                    error.details
+                );
+            } else {
+                elizaLogger.error(
+                    "Unexpected error during Paradex authentication:",
+                    error
+                );
+            }
             return false;
         }
     },
