@@ -5,13 +5,7 @@ import {
     State,
     elizaLogger,
 } from "@elizaos/core";
-import { spawn } from "child_process";
-import path from "path";
-import { fileURLToPath } from 'url';
-import fs from 'fs';
-
-const __filename = fileURLToPath(import.meta.url);
-const __dirname = path.dirname(__filename);
+import { getJwtToken, ParadexAuthError } from "../utils/getJwtParadex";
 
 interface ParadexState extends State {
     starknetAccount?: string;
@@ -19,138 +13,57 @@ interface ParadexState extends State {
     lastMessage?: string;
     jwtToken?: string;
     jwtExpiry?: number;
+    accountBalance?: string;
+    accountOrders?: any[];
 }
 
-interface AuthResponse {
-    jwt_token: string;
-    expiry: number;
-    account_address: string;
-    error?: string;
-}
+async function fetchAccountInfo(jwt: string, account: string) {
+    try {
+        // Fetch account balance
+        const balanceResponse = await fetch(
+            `https://api.prod.paradex.trade/v1/balance`,
+            {
+                headers: {
+                    Authorization: `Bearer ${jwt}`,
+                    Accept: "application/json",
+                },
+            }
+        );
+        const balanceData = await balanceResponse.json();
 
-class ParadexAuthError extends Error {
-    constructor(message: string, public details?: any) {
-        super(message);
-        this.name = "ParadexAuthError";
+        // Fetch open orders
+        const ordersResponse = await fetch(
+            `https://api.prod.paradex.trade/v1/orders`,
+            {
+                headers: {
+                    Authorization: `Bearer ${jwt}`,
+                    Accept: "application/json",
+                },
+            }
+        );
+        const ordersData = await ordersResponse.json();
+        console.log("ordersData", ordersData);
+
+        elizaLogger.success("ordersData", ordersData);
+
+        return {
+            balance: balanceData,
+            orders: ordersData,
+        };
+    } catch (error) {
+        console.error("Error fetching account info:", error);
+        throw new ParadexAuthError(
+            "Failed to fetch account information",
+            error
+        );
     }
 }
-
-const getScriptPaths = () => {
-    const pluginRoot = path.resolve(__dirname, '..');
-    const pythonDir = path.join(pluginRoot, 'src', 'python');
-    
-    const venvPath = process.platform === "win32"
-        ? path.join(pythonDir, '.venv', 'Scripts', 'python.exe')
-        : path.join(pythonDir, '.venv', 'bin', 'python3');
-        
-    const scriptPath = path.join(pythonDir, 'fetch_jwt.py');
-    
-    console.log("Paths:", {
-        pluginRoot,
-        pythonDir,
-        venvPath,
-        scriptPath,
-        venvExists: fs.existsSync(venvPath),
-        scriptExists: fs.existsSync(scriptPath)
-    });
-    
-    return { venvPath, scriptPath, pythonDir };
-};
-
-const getJwtToken = (ethPrivateKey: string): Promise<AuthResponse> => {
-    return new Promise((resolve, reject) => {
-        const { venvPath, scriptPath, pythonDir } = getScriptPaths();
-
-        if (!fs.existsSync(venvPath)) {
-            console.error("Python virtual environment not found at:", venvPath);
-            reject(new ParadexAuthError("Python virtual environment not found"));
-            return;
-        }
-
-        if (!fs.existsSync(scriptPath)) {
-            console.error("Python script not found at:", scriptPath);
-            reject(new ParadexAuthError("Python script not found"));
-            return;
-        }
-
-        let stdout = "";
-        let stderr = "";
-
-        const pythonProcess = spawn(venvPath, [scriptPath], {
-            env: {
-                ...process.env,
-                PYTHONUNBUFFERED: "1",
-                PYTHONPATH: pythonDir,
-                ETHEREUM_PRIVATE_KEY: ethPrivateKey,
-            },
-        });
-
-        pythonProcess.stdout.on("data", (data) => {
-            const chunk = data.toString();
-            stdout += chunk;
-            console.log("Python stdout:", chunk);
-        });
-
-        pythonProcess.stderr.on("data", (data) => {
-            const chunk = data.toString();
-            stderr += chunk;
-            console.log("Python stderr:", chunk);
-        });
-
-        pythonProcess.on("close", (code) => {
-
-            if (code === 0 && stdout) {
-                try {
-                    const result = JSON.parse(stdout);
-                    resolve(result);
-                } catch (e) {
-                    console.error("Failed to parse Python output:", e);
-                    console.log("Raw stdout:", stdout);
-                    reject(
-                        new ParadexAuthError(
-                            "Failed to parse Python script output",
-                            { stdout, stderr, parseError: e }
-                        )
-                    );
-                }
-            } else {
-                console.error("Python script failed");
-                console.log("Exit code:", code);
-                console.log("stdout:", stdout);
-                console.log("stderr:", stderr);
-                reject(
-                    new ParadexAuthError(
-                        "Script failed with error",
-                        { stdout, stderr, code }
-                    )
-                );
-            }
-        });
-
-        pythonProcess.on("error", (error) => {
-            console.error("Failed to start Python process:", error);
-            reject(
-                new ParadexAuthError(
-                    `Failed to execute Python script: ${error.message}`,
-                    { error, pythonPath: venvPath, scriptPath }
-                )
-            );
-        });
-
-        const timeout = setTimeout(() => {
-            console.log("Python process timed out - killing process");
-            pythonProcess.kill();
-            reject(new ParadexAuthError("Authentication timed out"));
-        }, 30000);
-
-        pythonProcess.on("close", () => clearTimeout(timeout));
-    });
-};
 
 export const paradexAuthAction: Action = {
     name: "PARADEX_AUTH",
     similes: ["CONNECT_PARADEX", "LOGIN_PARADEX", "AUTHENTICATE_PARADEX"],
-    description: "Handles Paradex account creation and authentication",
+    description:
+        "Handles Paradex account authentication and fetches account information",
     suppressInitialMessage: true,
 
     validate: async (runtime: IAgentRuntime, message: Memory) => {
@@ -167,6 +80,7 @@ export const paradexAuthAction: Action = {
         }
 
         try {
+            // 1. Get environment variables
             const ethPrivateKey = process.env.ETHEREUM_PRIVATE_KEY;
             if (!ethPrivateKey) {
                 console.error("ETHEREUM_PRIVATE_KEY not set");
@@ -175,25 +89,40 @@ export const paradexAuthAction: Action = {
                 );
             }
 
-            const result = await getJwtToken(ethPrivateKey);
+            // 2. Get JWT token
+            const authResult = await getJwtToken(ethPrivateKey);
 
-            if (result.jwt_token) {
-                state.jwtToken = result.jwt_token;
-                state.jwtExpiry = result.expiry;
-                state.starknetAccount = result.account_address;
-                console.log("Successfully obtained JWT token and updated state", result.jwt_token)
-                return true;
-            } else {
-                console.error("No JWT token in result:", result);
-                throw new ParadexAuthError(
-                    "Failed to get JWT token from Python script"
-                );
+            if (!authResult.jwt_token) {
+                console.error("No JWT token in result:", authResult);
+                throw new ParadexAuthError("Failed to get JWT token");
             }
+            console.log("authResult", authResult);
+
+            // 3. Update state with auth info
+            state.jwtToken = authResult.jwt_token;
+            state.jwtExpiry = authResult.expiry;
+            state.starknetAccount = authResult.account_address;
+
+            // 4. Fetch account information
+            const accountInfo = await fetchAccountInfo(
+                authResult.jwt_token,
+                authResult.account_address
+            );
+            console.log("acciuntInfo:", accountInfo);
+
+            // 5. Update state with account info
+            state.accountBalance = accountInfo.balance;
+            state.accountOrders = accountInfo.orders;
+
+            console.log("Successfully authenticated and fetched account info");
+
+            return true;
         } catch (error) {
-            console.error("Authentication error:", error);
+            console.error("Authentication/Account Info error:", error);
             if (error instanceof ParadexAuthError) {
                 console.error("Details:", error.details);
             }
+
             return false;
         }
     },
@@ -207,7 +136,7 @@ export const paradexAuthAction: Action = {
             {
                 user: "{{agent}}",
                 content: {
-                    text: "Successfully connected to Paradex.",
+                    text: "Successfully connected to Paradex and fetched account information.",
                     action: "PARADEX_AUTH",
                 },
             },
