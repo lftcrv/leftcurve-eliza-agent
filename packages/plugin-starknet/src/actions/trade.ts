@@ -25,7 +25,7 @@ import {
     fetchMultipleTokenDetails,
     fetchMultipleTokenPriceFeeds,
 } from "../providers/marketInfosProvider.ts";
-import { isSwapContent } from "./swap.ts";
+import { isSwapContent } from "../utils/index.ts";
 
 export const MultipleTokenInfos = async () => {
     try {
@@ -70,24 +70,6 @@ export const sendTradingInfo = async (tradingInfoDto, backendPort, apiKey) => {
         );
     }
 };
-
-// async function getCurrentNews(searchTerm: string) {
-//     if (!NEWS_API_KEY) {
-//         throw new Error("NEWS_API_KEY environment variable is not set");
-//     }
-
-//     const response = await fetch(
-//         `https://newsapi.org/v2/everything?q=${searchTerm}&apiKey=${NEWS_API_KEY}`
-//     );
-//     const data = await response.json();
-//     return data.articles
-//         .slice(0, 5)
-//         .map(
-//             (article) =>
-//                 `${article.title}\n${article.description}\n${article.url}\n${article.content.slice(0, 1000)}`
-//         )
-//         .join("\n\n");
-// }
 
 export const tradeAction: Action = {
     name: "EXECUTE_STARKNET_TRADE",
@@ -140,7 +122,6 @@ export const tradeAction: Action = {
         });
 
         console.log(response);
-        callback({ text: response });
 
         try {
             const parsedDecision: TradeDecision = JSON.parse(response);
@@ -148,21 +129,26 @@ export const tradeAction: Action = {
 
             if (parsedDecision.shouldTrade === "yes") {
                 if (!isSwapContent(swap)) {
-                    callback?.({
-                        text: "Invalid swap content, please try again.",
-                    });
                     return false;
                 }
                 try {
-                    // Get quote
+                    const sellTokenAddress = STARKNET_TOKENS.find(
+                        (t) =>
+                            t.name === swap.sellTokenName
+                    ).address;
+                    const buyTokenAddress = STARKNET_TOKENS.find(
+                        (t) =>
+                            t.name === swap.buyTokenName
+                    ).address;
+
+                    // Get quote for the proposed trade
                     const quoteParams: QuoteRequest = {
-                        sellTokenAddress: swap.sellTokenAddress,
-                        buyTokenAddress: swap.buyTokenAddress,
+                        sellTokenAddress: sellTokenAddress,
+                        buyTokenAddress: buyTokenAddress,
                         sellAmount: BigInt(swap.sellAmount),
                     };
                     const quote = await fetchQuotes(quoteParams);
                     const bestQuote = quote[0];
-                    //getStarknetAccount(runtime);
                     // Execute swap
                     const swapResult = await executeAvnuSwap(
                         getStarknetAccount(runtime),
@@ -172,35 +158,14 @@ export const tradeAction: Action = {
                             executeApprove: true,
                         }
                     );
-                    elizaLogger.log(
-                        "Swap completed successfully! tx: " +
-                            swapResult.transactionHash
-                    );
-                    callback?.({
-                        text:
-                            "Swap completed successfully! tx: " + // todo: be sure that the swap indeed executed successfully
-                            swapResult.transactionHash,
-                    });
-
-                    const sellTokenName = STARKNET_TOKENS.find(
-                        (t) =>
-                            t.address.toLowerCase() ===
-                            swap.sellTokenAddress.toLowerCase()
-                    ).name;
-                    const buyTokenName = STARKNET_TOKENS.find(
-                        (t) =>
-                            t.address.toLowerCase() ===
-                            swap.buyTokenAddress.toLowerCase()
-                    ).name;
-
                     const tradeObject = {
                         tradeId: swapResult.transactionHash,
                         containerId: CONTAINER_ID,
                         trade: {
-                            sellTokenName: sellTokenName,
-                            sellTokenAddress: swap.sellTokenAddress,
-                            buyTokenName: buyTokenName,
-                            buyTokenAddress: swap.buyTokenAddress,
+                            sellTokenName: swap.sellTokenName,
+                            sellTokenAddress: sellTokenAddress,
+                            buyTokenName: swap.buyTokenName,
+                            buyTokenAddress: buyTokenAddress,
                             sellAmount: swap.sellAmount.toString(),
                             buyAmount: bestQuote
                                 ? bestQuote.buyAmount.toString()
@@ -211,9 +176,6 @@ export const tradeAction: Action = {
                             explanation: parsedDecision.Explanation,
                         },
                     };
-
-                    // Convert to JSON string
-                    // const message = JSON.stringify(tradeObject);
 
                     // Create the DTO
                     const tradingInfoDto = {
@@ -230,14 +192,10 @@ export const tradeAction: Action = {
                     return true;
                 } catch (error) {
                     console.log("Error during token swap:", error);
-                    callback?.({ text: `Error during swap:` });
                     return false;
                 }
             } else {
                 console.log("It is not relevant to trade at the moment."); // TOODO: add better and personnalized reason related to personnality
-                callback?.({
-                    text: "It is not relevant to trade at the moment.",
-                });
             }
         } catch (error) {
             console.error("JSON parsing error:", error);

@@ -14,8 +14,8 @@ Do not add any extra text before or after the JSON block. Follow the structure e
 {
   "shouldTrade": "yes",
   "swap": {
-    "sellTokenAddress": "[The address of the token you are selling]",
-    "buyTokenAddress": "[The address of the token you are buying]",
+    "sellTokenName": "[The name of the token you are selling]",
+    "buyTokenName": "[The name of the token you are buying]",
     "sellAmount": "[The amount to sell in wei]"
   },
   "Explanation": "[Brief explanation of why you made this decision. Write with your personality]",

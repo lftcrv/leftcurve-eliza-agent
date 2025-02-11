@@ -20,7 +20,6 @@ export const bootstrapPlugin: Plugin = {
     name: "bootstrap",
     description: "Agent bootstrap with basic actions and evaluators",
     actions: [
-        continueAction,
         followRoomAction,
         unfollowRoomAction,
         ignoreAction,

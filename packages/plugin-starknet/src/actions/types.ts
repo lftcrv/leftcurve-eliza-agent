@@ -59,15 +59,16 @@ export interface TokenPriceFeed {
     priceFeed: LinePriceFeedItem[];
 }
 
-export interface Swap {
-    sellTokenAddress: string;
-    buyTokenAddress: string;
-    sellAmount: string;
-}
 
 export interface TradeDecision {
     shouldTrade: "yes" | "no";
-    swap: Swap;
+    swap: SwapContent;
     Explanation: string;
     Tweet: string;
+}
+
+export interface SwapContent {
+    sellTokenName: string;
+    buyTokenName: string;
+    sellAmount: string;
 }
