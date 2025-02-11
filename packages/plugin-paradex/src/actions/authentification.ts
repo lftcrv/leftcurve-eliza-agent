@@ -7,6 +7,11 @@ import {
 } from "@elizaos/core";
 import { spawn } from "child_process";
 import path from "path";
+import { fileURLToPath } from 'url';
+import fs from 'fs';
+
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = path.dirname(__filename);
 
 interface ParadexState extends State {
     starknetAccount?: string;
@@ -30,95 +35,113 @@ class ParadexAuthError extends Error {
     }
 }
 
-const getVenvPythonPath = () => {
-    // Check if we're on Windows
-    const isWindows = process.platform === "win32";
-
-    // Get the plugin's src directory
-    const srcDir = path.resolve(__dirname);
-    // Go up one level to get to the plugin root
-    const pluginDir = path.resolve(srcDir, "..");
-
-    // Construct the path to the Python executable in the virtual environment
-    const venvPath = isWindows
-        ? path.join(pluginDir, ".venv", "Scripts", "python.exe")
-        : path.join(pluginDir, ".venv", "bin", "python3");
-
-    return venvPath;
+const getScriptPaths = () => {
+    const pluginRoot = path.resolve(__dirname, '..');
+    const pythonDir = path.join(pluginRoot, 'src', 'python');
+    
+    const venvPath = process.platform === "win32"
+        ? path.join(pythonDir, '.venv', 'Scripts', 'python.exe')
+        : path.join(pythonDir, '.venv', 'bin', 'python3');
+        
+    const scriptPath = path.join(pythonDir, 'fetch_jwt.py');
+    
+    console.log("Paths:", {
+        pluginRoot,
+        pythonDir,
+        venvPath,
+        scriptPath,
+        venvExists: fs.existsSync(venvPath),
+        scriptExists: fs.existsSync(scriptPath)
+    });
+    
+    return { venvPath, scriptPath, pythonDir };
 };
 
 const getJwtToken = (ethPrivateKey: string): Promise<AuthResponse> => {
     return new Promise((resolve, reject) => {
-        const pythonPath = getVenvPythonPath();
-        // Path to your Python script relative to the src directory
-        const scriptPath = path.join(__dirname, "onboarding.py");
+        const { venvPath, scriptPath, pythonDir } = getScriptPaths();
+
+        if (!fs.existsSync(venvPath)) {
+            console.error("Python virtual environment not found at:", venvPath);
+            reject(new ParadexAuthError("Python virtual environment not found"));
+            return;
+        }
+
+        if (!fs.existsSync(scriptPath)) {
+            console.error("Python script not found at:", scriptPath);
+            reject(new ParadexAuthError("Python script not found"));
+            return;
+        }
 
         let stdout = "";
         let stderr = "";
 
-        const pythonProcess = spawn(pythonPath, [scriptPath], {
+        const pythonProcess = spawn(venvPath, [scriptPath], {
             env: {
                 ...process.env,
                 PYTHONUNBUFFERED: "1",
-                PYTHONPATH: path.resolve(__dirname), // Set to src directory
-                ETHEREUM_PRIVATE_KEY: ethPrivateKey, // Pass private key as env var
+                PYTHONPATH: pythonDir,
+                ETHEREUM_PRIVATE_KEY: ethPrivateKey,
             },
         });
 
         pythonProcess.stdout.on("data", (data) => {
-            stdout += data.toString();
+            const chunk = data.toString();
+            stdout += chunk;
+            console.log("Python stdout:", chunk);
         });
 
         pythonProcess.stderr.on("data", (data) => {
-            stderr += data.toString();
-            // Log stderr in real-time for debugging
-            elizaLogger.debug("Python stderr:", stderr);
+            const chunk = data.toString();
+            stderr += chunk;
+            console.log("Python stderr:", chunk);
         });
 
         pythonProcess.on("close", (code) => {
+
             if (code === 0 && stdout) {
                 try {
                     const result = JSON.parse(stdout);
                     resolve(result);
                 } catch (e) {
+                    console.error("Failed to parse Python output:", e);
+                    console.log("Raw stdout:", stdout);
                     reject(
                         new ParadexAuthError(
                             "Failed to parse Python script output",
-                            { stdout, stderr }
+                            { stdout, stderr, parseError: e }
                         )
                     );
                 }
             } else {
-                try {
-                    const error = stderr
-                        ? JSON.parse(stderr)
-                        : { error: "Unknown error occurred" };
-                    reject(new ParadexAuthError(error.error, error));
-                } catch (e) {
-                    reject(
-                        new ParadexAuthError(
-                            stderr || "Script failed with no error message"
-                        )
-                    );
-                }
+                console.error("Python script failed");
+                console.log("Exit code:", code);
+                console.log("stdout:", stdout);
+                console.log("stderr:", stderr);
+                reject(
+                    new ParadexAuthError(
+                        "Script failed with error",
+                        { stdout, stderr, code }
+                    )
+                );
             }
         });
 
         pythonProcess.on("error", (error) => {
-            elizaLogger.error("Python process error:", error);
+            console.error("Failed to start Python process:", error);
             reject(
                 new ParadexAuthError(
                     `Failed to execute Python script: ${error.message}`,
-                    error
+                    { error, pythonPath: venvPath, scriptPath }
                 )
             );
         });
 
-        // Set a timeout
         const timeout = setTimeout(() => {
+            console.log("Python process timed out - killing process");
             pythonProcess.kill();
             reject(new ParadexAuthError("Authentication timed out"));
-        }, 30000); // 30 seconds timeout
+        }, 30000);
 
         pythonProcess.on("close", () => clearTimeout(timeout));
     });
@@ -139,61 +162,37 @@ export const paradexAuthAction: Action = {
         message: Memory,
         state?: ParadexState
     ) => {
-        elizaLogger.info("Starting Paradex authentication...");
-
         if (!state) {
             state = (await runtime.composeState(message)) as ParadexState;
         }
 
         try {
-            // Get private key from secure environment variable
             const ethPrivateKey = process.env.ETHEREUM_PRIVATE_KEY;
             if (!ethPrivateKey) {
+                console.error("ETHEREUM_PRIVATE_KEY not set");
                 throw new ParadexAuthError(
                     "ETHEREUM_PRIVATE_KEY environment variable not set"
                 );
             }
 
-            // Execute Python script
             const result = await getJwtToken(ethPrivateKey);
 
             if (result.jwt_token) {
                 state.jwtToken = result.jwt_token;
                 state.jwtExpiry = result.expiry;
                 state.starknetAccount = result.account_address;
-                elizaLogger.info("Successfully obtained JWT token");
-
-                // // Schedule token refresh before expiry (5 minutes before)
-                // const refreshTime =
-                //     result.expiry * 1000 - Date.now() - 5 * 60 * 1000;
-                // if (refreshTime > 0) {
-                //     setTimeout(() => {
-                //         void runtime.processAction(
-                //             "PARADEX_AUTH",
-                //             message,
-                //             state
-                //         );
-                //     }, refreshTime);
-                // }
-
+                console.log("Successfully obtained JWT token and updated state", result.jwt_token)
                 return true;
             } else {
+                console.error("No JWT token in result:", result);
                 throw new ParadexAuthError(
                     "Failed to get JWT token from Python script"
                 );
             }
         } catch (error) {
+            console.error("Authentication error:", error);
             if (error instanceof ParadexAuthError) {
-                elizaLogger.error(
-                    "Paradex authentication error:",
-                    error.message,
-                    error.details
-                );
-            } else {
-                elizaLogger.error(
-                    "Unexpected error during Paradex authentication:",
-                    error
-                );
+                console.error("Details:", error.details);
             }
             return false;
         }
