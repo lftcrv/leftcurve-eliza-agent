@@ -32,19 +32,19 @@ importers:
     dependencies:
       '@0glabs/0g-ts-sdk':
         specifier: 0.2.1
-        version: 0.2.1(bufferutil@4.0.9)(ethers@6.13.5(bufferutil@4.0.9)(utf-8-validate@6.0.5))(utf-8-validate@6.0.5)
+        version: 0.2.1(bufferutil@4.0.9)(ethers@6.13.5(bufferutil@4.0.9)(utf-8-validate@5.0.10))(utf-8-validate@5.0.10)
       '@coinbase/coinbase-sdk':
         specifier: 0.10.0
-        version: 0.10.0(bufferutil@4.0.9)(typescript@5.6.3)(utf-8-validate@6.0.5)(zod@3.24.1)
+        version: 0.10.0(bufferutil@4.0.9)(typescript@5.6.3)(utf-8-validate@5.0.10)(zod@3.24.1)
       '@deepgram/sdk':
         specifier: ^3.9.0
-        version: 3.10.1(bufferutil@4.0.9)(encoding@0.1.13)(utf-8-validate@6.0.5)
+        version: 3.10.1(bufferutil@4.0.9)(encoding@0.1.13)(utf-8-validate@5.0.10)
       '@injectivelabs/sdk-ts':
         specifier: ^1.14.33
-        version: 1.14.40(@types/react@19.0.8)(bufferutil@4.0.9)(react-dom@19.0.0(react@19.0.0))(react@19.0.0)(utf-8-validate@6.0.5)
+        version: 1.14.40(@types/react@19.0.8)(bufferutil@4.0.9)(react-dom@19.0.0(react@19.0.0))(react@19.0.0)(utf-8-validate@5.0.10)
       '@vitest/eslint-plugin':
         specifier: 1.0.1
-        version: 1.0.1(@typescript-eslint/utils@8.23.0(eslint@9.19.0(jiti@2.4.2))(typescript@5.6.3))(eslint@9.19.0(jiti@2.4.2))(typescript@5.6.3)(vitest@2.1.5(@types/node@22.13.1)(jsdom@25.0.1(bufferutil@4.0.9)(canvas@2.11.2(encoding@0.1.13))(utf-8-validate@6.0.5))(terser@5.38.1))
+        version: 1.0.1(@typescript-eslint/utils@8.23.0(eslint@9.19.0(jiti@2.4.2))(typescript@5.6.3))(eslint@9.19.0(jiti@2.4.2))(typescript@5.6.3)(vitest@2.1.5(@types/node@20.17.9)(jsdom@25.0.1(bufferutil@4.0.9)(canvas@2.11.2(encoding@0.1.13))(utf-8-validate@5.0.10))(terser@5.38.1))
       amqplib:
         specifier: 0.10.5
         version: 0.10.5
@@ -75,7 +75,7 @@ importers:
         version: 1.9.4
       '@commitlint/cli':
         specifier: 18.6.1
-        version: 18.6.1(@types/node@22.13.1)(typescript@5.6.3)
+        version: 18.6.1(@types/node@20.17.9)(typescript@5.6.3)
       '@commitlint/config-conventional':
         specifier: 18.6.3
         version: 18.6.3
@@ -93,7 +93,7 @@ importers:
         version: 9.1.7
       jest:
         specifier: ^29.7.0
-        version: 29.7.0(@types/node@22.13.1)(babel-plugin-macros@3.1.0)
+        version: 29.7.0(@types/node@20.17.9)(babel-plugin-macros@3.1.0)(ts-node@10.9.2(@swc/core@1.10.14(@swc/helpers@0.5.15))(@types/node@20.17.9)(typescript@5.6.3))
       lerna:
         specifier: 8.1.5
         version: 8.1.5(@swc/core@1.10.14(@swc/helpers@0.5.15))(babel-plugin-macros@3.1.0)(encoding@0.1.13)
@@ -111,13 +111,13 @@ importers:
         version: 5.6.3
       viem:
         specifier: 2.21.58
-        version: 2.21.58(bufferutil@4.0.9)(typescript@5.6.3)(utf-8-validate@6.0.5)(zod@3.24.1)
+        version: 2.21.58(bufferutil@4.0.9)(typescript@5.6.3)(utf-8-validate@5.0.10)(zod@3.24.1)
       vite:
         specifier: 5.4.12
-        version: 5.4.12(@types/node@22.13.1)(terser@5.38.1)
+        version: 5.4.12(@types/node@20.17.9)(terser@5.38.1)
       vitest:
         specifier: 2.1.5
-        version: 2.1.5(@types/node@22.13.1)(jsdom@25.0.1(bufferutil@4.0.9)(canvas@2.11.2(encoding@0.1.13))(utf-8-validate@6.0.5))(terser@5.38.1)
+        version: 2.1.5(@types/node@20.17.9)(jsdom@25.0.1(bufferutil@4.0.9)(canvas@2.11.2(encoding@0.1.13))(utf-8-validate@5.0.10))(terser@5.38.1)
 
   agent:
     dependencies:
@@ -4129,9 +4129,12 @@ importers:
       '@elizaos/core':
         specifier: workspace:*
         version: link:../core
+      '@paradex/sdk':
+        specifier: file:/Users/ainur/perso/blockchain/opensource/eliza-folder/paradex/paradex.js
+        version: file:../paradex/paradex.js(encoding@0.1.13)
       starknet:
-        specifier: 6.18.0
-        version: 6.18.0(encoding@0.1.13)
+        specifier: ^5.24.3
+        version: 5.29.0(encoding@0.1.13)
       tsup:
         specifier: ^8.3.5
         version: 8.3.5(@swc/core@1.10.14(@swc/helpers@0.5.15))(jiti@2.4.2)(postcss@8.5.1)(tsx@4.19.2)(typescript@5.7.3)(yaml@2.7.0)
@@ -4390,7 +4393,7 @@ importers:
         version: link:../plugin-trustdb
       '@solana/spl-token':
         specifier: 0.4.9
-        version: 0.4.9(@solana/web3.js@1.95.8(bufferutil@4.0.9)(encoding@0.1.13)(utf-8-validate@5.0.10))(bufferutil@4.0.9)(encoding@0.1.13)(fastestsmallesttextencoderdecoder@1.0.22)(typescript@5.6.3)(utf-8-validate@5.0.10)
+        version: 0.4.9(@solana/web3.js@1.95.8(bufferutil@4.0.9)(encoding@0.1.13)(utf-8-validate@5.0.10))(bufferutil@4.0.9)(encoding@0.1.13)(fastestsmallesttextencoderdecoder@1.0.22)(typescript@5.7.3)(utf-8-validate@5.0.10)
       '@solana/web3.js':
         specifier: npm:@solana/web3.js@1.95.8
         version: 1.95.8(bufferutil@4.0.9)(encoding@0.1.13)(utf-8-validate@5.0.10)
@@ -4402,7 +4405,7 @@ importers:
         version: 5.0.0
       fomo-sdk-solana:
         specifier: 1.3.2
-        version: 1.3.2(bufferutil@4.0.9)(encoding@0.1.13)(fastestsmallesttextencoderdecoder@1.0.22)(typescript@5.6.3)(utf-8-validate@5.0.10)
+        version: 1.3.2(bufferutil@4.0.9)(encoding@0.1.13)(fastestsmallesttextencoderdecoder@1.0.22)(typescript@5.7.3)(utf-8-validate@5.0.10)
       form-data:
         specifier: 4.0.1
         version: 4.0.1
@@ -4411,16 +4414,16 @@ importers:
         version: 5.1.2
       pumpdotfun-sdk:
         specifier: 1.3.2
-        version: 1.3.2(bufferutil@4.0.9)(encoding@0.1.13)(fastestsmallesttextencoderdecoder@1.0.22)(rollup@4.34.6)(typescript@5.6.3)(utf-8-validate@5.0.10)
+        version: 1.3.2(bufferutil@4.0.9)(encoding@0.1.13)(fastestsmallesttextencoderdecoder@1.0.22)(rollup@4.34.6)(typescript@5.7.3)(utf-8-validate@5.0.10)
       solana-agent-kit:
         specifier: ^1.4.0
-        version: 1.4.4(@noble/hashes@1.7.1)(@solana/buffer-layout@4.0.1)(@swc/core@1.10.14(@swc/helpers@0.5.15))(@types/node@20.17.9)(arweave@1.15.5)(axios@1.7.9)(borsh@2.0.0)(buffer@6.0.3)(bufferutil@4.0.9)(encoding@0.1.13)(fastestsmallesttextencoderdecoder@1.0.22)(handlebars@4.7.8)(react@19.0.0)(sodium-native@3.4.1)(typescript@5.6.3)(utf-8-validate@5.0.10)(ws@8.18.0(bufferutil@4.0.9)(utf-8-validate@5.0.10))
+        version: 1.4.4(@noble/hashes@1.7.1)(@solana/buffer-layout@4.0.1)(@swc/core@1.10.14(@swc/helpers@0.5.15))(@types/node@22.13.1)(arweave@1.15.5)(axios@1.7.9)(borsh@2.0.0)(buffer@6.0.3)(bufferutil@4.0.9)(encoding@0.1.13)(fastestsmallesttextencoderdecoder@1.0.22)(handlebars@4.7.8)(react@19.0.0)(sodium-native@3.4.1)(typescript@5.7.3)(utf-8-validate@5.0.10)(ws@8.18.0(bufferutil@4.0.9)(utf-8-validate@5.0.10))
       tsup:
         specifier: 8.3.5
-        version: 8.3.5(@swc/core@1.10.14(@swc/helpers@0.5.15))(jiti@2.4.2)(postcss@8.5.1)(tsx@4.19.2)(typescript@5.6.3)(yaml@2.7.0)
+        version: 8.3.5(@swc/core@1.10.14(@swc/helpers@0.5.15))(jiti@2.4.2)(postcss@8.5.1)(tsx@4.19.2)(typescript@5.7.3)(yaml@2.7.0)
       vitest:
         specifier: 2.1.4
-        version: 2.1.4(@types/node@20.17.9)(jsdom@25.0.1(bufferutil@4.0.9)(canvas@2.11.2(encoding@0.1.13))(utf-8-validate@5.0.10))(terser@5.38.1)
+        version: 2.1.4(@types/node@22.13.1)(jsdom@25.0.1(bufferutil@4.0.9)(canvas@2.11.2(encoding@0.1.13))(utf-8-validate@5.0.10))(terser@5.38.1)
       whatwg-url:
         specifier: 7.1.0
         version: 7.1.0
@@ -4441,7 +4444,7 @@ importers:
         version: link:../plugin-trustdb
       '@solana/spl-token':
         specifier: 0.4.9
-        version: 0.4.9(@solana/web3.js@1.95.8(bufferutil@4.0.9)(encoding@0.1.13)(utf-8-validate@5.0.10))(bufferutil@4.0.9)(encoding@0.1.13)(fastestsmallesttextencoderdecoder@1.0.22)(typescript@5.7.3)(utf-8-validate@5.0.10)
+        version: 0.4.9(@solana/web3.js@1.95.8(bufferutil@4.0.9)(encoding@0.1.13)(utf-8-validate@5.0.10))(bufferutil@4.0.9)(encoding@0.1.13)(fastestsmallesttextencoderdecoder@1.0.22)(typescript@5.6.3)(utf-8-validate@5.0.10)
       '@solana/web3.js':
         specifier: npm:@solana/web3.js@1.95.8
         version: 1.95.8(bufferutil@4.0.9)(encoding@0.1.13)(utf-8-validate@5.0.10)
@@ -4456,7 +4459,7 @@ importers:
         version: 5.0.0
       fomo-sdk-solana:
         specifier: 1.3.2
-        version: 1.3.2(bufferutil@4.0.9)(encoding@0.1.13)(fastestsmallesttextencoderdecoder@1.0.22)(typescript@5.7.3)(utf-8-validate@5.0.10)
+        version: 1.3.2(bufferutil@4.0.9)(encoding@0.1.13)(fastestsmallesttextencoderdecoder@1.0.22)(typescript@5.6.3)(utf-8-validate@5.0.10)
       form-data:
         specifier: 4.0.1
         version: 4.0.1
@@ -4465,16 +4468,16 @@ importers:
         version: 5.1.2
       pumpdotfun-sdk:
         specifier: 1.3.2
-        version: 1.3.2(bufferutil@4.0.9)(encoding@0.1.13)(fastestsmallesttextencoderdecoder@1.0.22)(rollup@4.34.6)(typescript@5.7.3)(utf-8-validate@5.0.10)
+        version: 1.3.2(bufferutil@4.0.9)(encoding@0.1.13)(fastestsmallesttextencoderdecoder@1.0.22)(rollup@4.34.6)(typescript@5.6.3)(utf-8-validate@5.0.10)
       solana-agent-kit:
         specifier: ^1.2.0
-        version: 1.4.4(@noble/hashes@1.7.1)(@solana/buffer-layout@4.0.1)(@swc/core@1.10.14(@swc/helpers@0.5.15))(@types/node@22.13.1)(arweave@1.15.5)(axios@1.7.9)(borsh@2.0.0)(buffer@6.0.3)(bufferutil@4.0.9)(encoding@0.1.13)(fastestsmallesttextencoderdecoder@1.0.22)(handlebars@4.7.8)(react@19.0.0)(sodium-native@3.4.1)(typescript@5.7.3)(utf-8-validate@5.0.10)(ws@8.18.0(bufferutil@4.0.9)(utf-8-validate@5.0.10))
+        version: 1.4.4(@noble/hashes@1.7.1)(@solana/buffer-layout@4.0.1)(@swc/core@1.10.14(@swc/helpers@0.5.15))(@types/node@20.17.9)(arweave@1.15.5)(axios@1.7.9)(borsh@2.0.0)(buffer@6.0.3)(bufferutil@4.0.9)(encoding@0.1.13)(fastestsmallesttextencoderdecoder@1.0.22)(handlebars@4.7.8)(react@19.0.0)(sodium-native@3.4.1)(typescript@5.6.3)(utf-8-validate@5.0.10)(ws@8.18.0(bufferutil@4.0.9)(utf-8-validate@5.0.10))
       tsup:
         specifier: 8.3.5
-        version: 8.3.5(@swc/core@1.10.14(@swc/helpers@0.5.15))(jiti@2.4.2)(postcss@8.5.1)(tsx@4.19.2)(typescript@5.7.3)(yaml@2.7.0)
+        version: 8.3.5(@swc/core@1.10.14(@swc/helpers@0.5.15))(jiti@2.4.2)(postcss@8.5.1)(tsx@4.19.2)(typescript@5.6.3)(yaml@2.7.0)
       vitest:
         specifier: 2.1.4
-        version: 2.1.4(@types/node@22.13.1)(jsdom@25.0.1(bufferutil@4.0.9)(canvas@2.11.2(encoding@0.1.13))(utf-8-validate@5.0.10))(terser@5.38.1)
+        version: 2.1.4(@types/node@20.17.9)(jsdom@25.0.1(bufferutil@4.0.9)(canvas@2.11.2(encoding@0.1.13))(utf-8-validate@5.0.10))(terser@5.38.1)
       whatwg-url:
         specifier: 7.1.0
         version: 7.1.0
@@ -4600,6 +4603,9 @@ importers:
       '@elizaos/plugin-trustdb':
         specifier: workspace:*
         version: link:../plugin-trustdb
+      '@paradex/sdk':
+        specifier: ^0.6.0
+        version: 0.6.0(encoding@0.1.13)
       '@uniswap/sdk-core':
         specifier: 6.0.0
         version: 6.0.0
@@ -10865,6 +10871,12 @@ packages:
   '@osmonauts/lcd@0.8.0':
     resolution: {integrity: sha512-k7m2gAVnXc0H4m/eTq4z/8A6hFrr3MPS9wnLV4Xu9/K/WYltCnp2PpiObZm+feZUPK/svES6hxIQeO1bODLx8g==}
 
+  '@paradex/sdk@0.6.0':
+    resolution: {integrity: sha512-MU9Lflgi/slXUA3pp1JtQ6zUJdwaUhAmN3qFshs8xdPZJ9wgqAnaXhVnUdB3f7axzIfg+Z5l+eC7B76zR5Hc4A==}
+
+  '@paradex/sdk@file:../paradex/paradex.js':
+    resolution: {directory: ../paradex/paradex.js, type: directory}
+
   '@parcel/watcher-android-arm64@2.5.1':
     resolution: {integrity: sha512-KF8+j9nNbUN8vzOFDpRMsaKBHZ/mcjEjMToVMJOhTozkDonQFFrRcfdLWn6yWKCmJKmdVxSgHiYvTCef4/qcBA==}
     engines: {node: '>= 10.0.0'}
@@ -12166,6 +12178,36 @@ packages:
     cpu: [x64]
     os: [win32]
 
+  '@rometools/cli-darwin-arm64@12.1.3':
+    resolution: {integrity: sha512-AmFTUDYjBuEGQp/Wwps+2cqUr+qhR7gyXAUnkL5psCuNCz3807TrUq/ecOoct5MIavGJTH6R4aaSL6+f+VlBEg==}
+    cpu: [arm64]
+    os: [darwin]
+
+  '@rometools/cli-darwin-x64@12.1.3':
+    resolution: {integrity: sha512-k8MbWna8q4LRlb005N2X+JS1UQ+s3ZLBBvwk4fP8TBxlAJXUz17jLLu/Fi+7DTTEmMhM84TWj4FDKW+rNar28g==}
+    cpu: [x64]
+    os: [darwin]
+
+  '@rometools/cli-linux-arm64@12.1.3':
+    resolution: {integrity: sha512-X/uLhJ2/FNA3nu5TiyeNPqiD3OZoFfNfRvw6a3ut0jEREPvEn72NI7WPijH/gxSz55znfQ7UQ6iM4DZumUknJg==}
+    cpu: [arm64]
+    os: [linux]
+
+  '@rometools/cli-linux-x64@12.1.3':
+    resolution: {integrity: sha512-csP17q1eWiUXx9z6Jr/JJPibkplyKIwiWPYNzvPCGE8pHlKhwZj3YHRuu7Dm/4EOqx0XFIuqqWZUYm9bkIC8xg==}
+    cpu: [x64]
+    os: [linux]
+
+  '@rometools/cli-win32-arm64@12.1.3':
+    resolution: {integrity: sha512-RymHWeod57EBOJY4P636CgUwYA6BQdkQjh56XKk4pLEHO6X1bFyMet2XL7KlHw5qOTalzuzf5jJqUs+vf3jdXQ==}
+    cpu: [arm64]
+    os: [win32]
+
+  '@rometools/cli-win32-x64@12.1.3':
+    resolution: {integrity: sha512-yHSKYidqJMV9nADqg78GYA+cZ0hS1twANAjiFibQdXj9aGzD+s/IzIFEIi/U/OBLvWYg/SCw0QVozi2vTlKFDQ==}
+    cpu: [x64]
+    os: [win32]
+
   '@rtsao/scc@1.1.0':
     resolution: {integrity: sha512-zt6OdqaDoOnJ1ZYsCYGt9YmWzDXl4vQdKTyJev62gFhRGKdx7mcT54V9KIjg+d2wi9EXsPvAPKe7i7WjfVWB8g==}
 
@@ -13162,6 +13204,9 @@ packages:
 
   '@starknet-io/types-js@0.7.10':
     resolution: {integrity: sha512-1VtCqX4AHWJlRRSYGSn+4X1mqolI1Tdq62IwzoU2vUuEE72S1OlEeGhpvd6XsdqXcfHmVzYfj8k1XtKBQqwo9w==}
+
+  '@starkware-industries/starkware-crypto-utils@0.2.1':
+    resolution: {integrity: sha512-rA5O9b53zaoBOQwQxBd0cbumFbQoBm9NH/vfu+o0Cq3oouEbNPALneLlLjOmFEId2/WOJ5ecC64rFLI/PwuIPQ==}
 
   '@story-protocol/core-sdk@1.2.0-rc.3':
     resolution: {integrity: sha512-mZMQgYvMfr5ysvql3DWADwS4RqxtjZnLT7IGvP/haoZgNds8++6uUNGRBzItYGj/ejZQtYSVTyMUoE+a78zArQ==}
@@ -14942,6 +14987,10 @@ packages:
   abbrev@2.0.0:
     resolution: {integrity: sha512-6/mh1E2u2YgEsCHdY0Yx5oW+61gZU+1vXaoiHHrpKeuRNNgFvS+/jrwHiQhB5apAf5oB7UB7E19ol2R2LKH8hQ==}
     engines: {node: ^14.17.0 || ^16.13.0 || >=18.0.0}
+
+  abi-wan-kanabi@1.0.3:
+    resolution: {integrity: sha512-Xwva0AnhXx/IVlzo3/kwkI7Oa7ZX7codtcSn+Gmoa2PmjGPF/0jeVud9puasIPtB7V50+uBdUj4Mh3iATqtBvg==}
+    hasBin: true
 
   abi-wan-kanabi@2.2.4:
     resolution: {integrity: sha512-0aA81FScmJCPX+8UvkXLki3X1+yPQuWxEkqXBVKltgPAK79J+NB+Lp5DouMXa7L6f+zcRlIA/6XO7BN/q9fnvg==}
@@ -17967,6 +18016,9 @@ packages:
   emoticon@4.1.0:
     resolution: {integrity: sha512-VWZfnxqwNcc51hIy/sbOdEem6D+cVtpPzEEtVAFdaas30+1dgkyaOQ4sQ6Bp0tOMqWO1v+HQfYaoodOkdhK6SQ==}
 
+  enc-utils@3.0.0:
+    resolution: {integrity: sha512-e57t/Z2HzWOLwOp7DZcV0VMEY8t7ptWwsxyp6kM2b2zrk6JqIpXxzkruHAMiBsy5wg9jp/183GdiRXCvBtzsYg==}
+
   encode-utf8@1.0.3:
     resolution: {integrity: sha512-ucAnuBEhUK4boH2HjVYG5Q2mQyPorvv0u/ocS+zhdw0S8AlHYY+GOFhP1Gio5z4icpP2ivFSvhtFjQi8+T9ppw==}
 
@@ -18409,6 +18461,10 @@ packages:
   ethereumjs-util@7.1.5:
     resolution: {integrity: sha512-SDl5kKrQAudFBUe5OJM9Ac6WmMyYmXX/6sTmLZ3ffG2eY6ZIGBes3pEDxNN6V72WyOw4CPD5RomKdsa8DAAwLg==}
     engines: {node: '>=10.0.0'}
+
+  ethereumjs-wallet@1.0.2:
+    resolution: {integrity: sha512-CCWV4RESJgRdHIvFciVQFnCHfqyhXWchTPlkfp28Qc53ufs+doi5I/cV2+xeK9+qEo25XCWfP9MiL+WEPAZfdA==}
+    deprecated: 'New package name format for new versions: @ethereumjs/wallet. Please update.'
 
   ethers-multicall-provider@5.0.0:
     resolution: {integrity: sha512-dsfIwBSbr8yG+F0o87uoMFje1k5w988883MMJvK7R66mYT6NApQhQ7sMH/cxKGXTRf3at+nGt/4QIYHbYhe/8A==}
@@ -21462,6 +21518,9 @@ packages:
   loose-envify@1.4.0:
     resolution: {integrity: sha512-lyuxPGr/Wfhrlem2CL/UcnUc1zcqKAImBDzukY7Y5F/yQiNdko6+fRLevlw1HgMySw7f611UIY408EtxRSoK3Q==}
     hasBin: true
+
+  lossless-json@2.0.11:
+    resolution: {integrity: sha512-BP0vn+NGYvzDielvBZaFain/wgeJ1hTvURCqtKvhr1SCPePdaaTanmmcplrHfEJSJOUql7hk4FHwToNJjWRY3g==}
 
   lossless-json@4.0.2:
     resolution: {integrity: sha512-+z0EaLi2UcWi8MZRxA5iTb6m4Ys4E80uftGY+yG5KNFJb5EceQXOhdW/pWJZ8m97s26u7yZZAYMcKWNztSZssA==}
@@ -25112,6 +25171,11 @@ packages:
     engines: {node: '>=18.0.0', npm: '>=8.0.0'}
     hasBin: true
 
+  rome@12.1.3:
+    resolution: {integrity: sha512-e+ff72hxDpe/t5/Us7YRBVw3PBET7SeczTQNn6tvrWdrCaAw3qOukQQ+tDCkyFtS4yGsnhjrJbm43ctNbz27Yg==}
+    engines: {node: '>=14.*'}
+    hasBin: true
+
   roughjs@4.6.6:
     resolution: {integrity: sha512-ZUz/69+SYpFN/g/lUlo2FXcIjRkSu3nDarreVdGGndHEBJ6cXPdKguS8JGxwj5HA5xIbVKSmLgr5b3AWxtRfvQ==}
 
@@ -25835,6 +25899,9 @@ packages:
 
   standard-http-error@2.0.1:
     resolution: {integrity: sha512-DX/xPIoyXQTuY6BMZK4Utyi4l3A4vFoafsfqrU6/dO4Oe/59c7PyqPd2IQj9m+ZieDg2K3RL9xOYJsabcD9IUA==}
+
+  starknet@5.29.0:
+    resolution: {integrity: sha512-eEcd6uiYIwGvl8MtHOsXGBhREqjJk84M/qUkvPLQ3n/JAMkbKBGnygDlh+HAsvXJsGlMQfwrcVlm6KpDoPha7w==}
 
   starknet@6.18.0:
     resolution: {integrity: sha512-nlxz7bK/YBY8W8NUevkycxFwphsX27oi+4YCl36TYFdrJpTOMqmJDnZ27ssr7z0eEDQLQscIxt1gXrZzCJua7g==}
@@ -28743,12 +28810,12 @@ snapshots:
       - supports-color
       - utf-8-validate
 
-  '@0glabs/0g-ts-sdk@0.2.1(bufferutil@4.0.9)(ethers@6.13.5(bufferutil@4.0.9)(utf-8-validate@6.0.5))(utf-8-validate@6.0.5)':
+  '@0glabs/0g-ts-sdk@0.2.1(bufferutil@4.0.9)(ethers@6.13.5(bufferutil@4.0.9)(utf-8-validate@5.0.10))(utf-8-validate@5.0.10)':
     dependencies:
       '@ethersproject/bytes': 5.7.0
       '@ethersproject/keccak256': 5.7.0
-      ethers: 6.13.5(bufferutil@4.0.9)(utf-8-validate@6.0.5)
-      open-jsonrpc-provider: 0.2.1(bufferutil@4.0.9)(utf-8-validate@6.0.5)
+      ethers: 6.13.5(bufferutil@4.0.9)(utf-8-validate@5.0.10)
+      open-jsonrpc-provider: 0.2.1(bufferutil@4.0.9)(utf-8-validate@5.0.10)
     transitivePeerDependencies:
       - bufferutil
       - debug
@@ -28924,7 +28991,7 @@ snapshots:
   '@acuminous/bitsyntax@0.1.2':
     dependencies:
       buffer-more-ints: 1.0.0
-      debug: 4.4.0(supports-color@8.1.1)
+      debug: 4.4.0
       safe-buffer: 5.1.2
     transitivePeerDependencies:
       - supports-color
@@ -30109,7 +30176,7 @@ snapshots:
       '@babel/traverse': 7.26.7
       '@babel/types': 7.26.7
       convert-source-map: 2.0.0
-      debug: 4.4.0(supports-color@8.1.1)
+      debug: 4.4.0
       gensync: 1.0.0-beta.2
       json5: 2.2.3
       semver: 6.3.1
@@ -30889,7 +30956,7 @@ snapshots:
       '@babel/parser': 7.26.7
       '@babel/template': 7.25.9
       '@babel/types': 7.26.7
-      debug: 4.4.0(supports-color@8.1.1)
+      debug: 4.4.0
       globals: 11.12.0
     transitivePeerDependencies:
       - supports-color
@@ -31393,7 +31460,7 @@ snapshots:
       - typescript
       - utf-8-validate
 
-  '@coinbase/coinbase-sdk@0.10.0(bufferutil@4.0.9)(typescript@5.6.3)(utf-8-validate@6.0.5)(zod@3.24.1)':
+  '@coinbase/coinbase-sdk@0.10.0(bufferutil@4.0.9)(typescript@5.6.3)(utf-8-validate@5.0.10)(zod@3.24.1)':
     dependencies:
       '@scure/bip32': 1.6.2
       abitype: 1.0.8(typescript@5.6.3)(zod@3.24.1)
@@ -31404,10 +31471,10 @@ snapshots:
       bip39: 3.1.0
       decimal.js: 10.5.0
       dotenv: 16.4.7
-      ethers: 6.13.5(bufferutil@4.0.9)(utf-8-validate@6.0.5)
+      ethers: 6.13.5(bufferutil@4.0.9)(utf-8-validate@5.0.10)
       node-jose: 2.2.0
       secp256k1: 5.0.1
-      viem: 2.21.58(bufferutil@4.0.9)(typescript@5.6.3)(utf-8-validate@6.0.5)(zod@3.24.1)
+      viem: 2.21.58(bufferutil@4.0.9)(typescript@5.6.3)(utf-8-validate@5.0.10)(zod@3.24.1)
     transitivePeerDependencies:
       - bufferutil
       - debug
@@ -31469,11 +31536,11 @@ snapshots:
   '@colors/colors@1.5.0':
     optional: true
 
-  '@commitlint/cli@18.6.1(@types/node@22.13.1)(typescript@5.6.3)':
+  '@commitlint/cli@18.6.1(@types/node@20.17.9)(typescript@5.6.3)':
     dependencies:
       '@commitlint/format': 18.6.1
       '@commitlint/lint': 18.6.1
-      '@commitlint/load': 18.6.1(@types/node@22.13.1)(typescript@5.6.3)
+      '@commitlint/load': 18.6.1(@types/node@20.17.9)(typescript@5.6.3)
       '@commitlint/read': 18.6.1
       '@commitlint/types': 18.6.1
       execa: 5.1.1
@@ -31523,7 +31590,7 @@ snapshots:
       '@commitlint/rules': 18.6.1
       '@commitlint/types': 18.6.1
 
-  '@commitlint/load@18.6.1(@types/node@22.13.1)(typescript@5.6.3)':
+  '@commitlint/load@18.6.1(@types/node@20.17.9)(typescript@5.6.3)':
     dependencies:
       '@commitlint/config-validator': 18.6.1
       '@commitlint/execute-rule': 18.6.1
@@ -31531,7 +31598,7 @@ snapshots:
       '@commitlint/types': 18.6.1
       chalk: 4.1.2
       cosmiconfig: 8.3.6(typescript@5.6.3)
-      cosmiconfig-typescript-loader: 5.1.0(@types/node@22.13.1)(cosmiconfig@8.3.6(typescript@5.6.3))(typescript@5.6.3)
+      cosmiconfig-typescript-loader: 5.1.0(@types/node@20.17.9)(cosmiconfig@8.3.6(typescript@5.6.3))(typescript@5.6.3)
       lodash.isplainobject: 4.0.6
       lodash.merge: 4.6.2
       lodash.uniq: 4.5.0
@@ -32639,14 +32706,14 @@ snapshots:
     dependencies:
       dayjs: 1.11.13
 
-  '@deepgram/sdk@3.10.1(bufferutil@4.0.9)(encoding@0.1.13)(utf-8-validate@6.0.5)':
+  '@deepgram/sdk@3.10.1(bufferutil@4.0.9)(encoding@0.1.13)(utf-8-validate@5.0.10)':
     dependencies:
       '@deepgram/captions': 1.2.0
       '@types/node': 18.19.75
       cross-fetch: 3.2.0(encoding@0.1.13)
       deepmerge: 4.3.1
       events: 3.3.0
-      ws: 8.18.0(bufferutil@4.0.9)(utf-8-validate@6.0.5)
+      ws: 8.18.0(bufferutil@4.0.9)(utf-8-validate@5.0.10)
     transitivePeerDependencies:
       - bufferutil
       - encoding
@@ -34744,7 +34811,7 @@ snapshots:
   '@eslint/config-array@0.19.2':
     dependencies:
       '@eslint/object-schema': 2.1.6
-      debug: 4.4.0(supports-color@8.1.1)
+      debug: 4.4.0
       minimatch: 3.1.2
     transitivePeerDependencies:
       - supports-color
@@ -34774,7 +34841,7 @@ snapshots:
   '@eslint/eslintrc@3.2.0':
     dependencies:
       ajv: 6.12.6
-      debug: 4.4.0(supports-color@8.1.1)
+      debug: 4.4.0
       espree: 10.3.0
       globals: 14.0.0
       ignore: 5.3.2
@@ -35962,52 +36029,6 @@ snapshots:
       - subscriptions-transport-ws
       - utf-8-validate
 
-  '@injectivelabs/sdk-ts@1.14.40(@types/react@19.0.8)(bufferutil@4.0.9)(react-dom@19.0.0(react@19.0.0))(react@19.0.0)(utf-8-validate@6.0.5)':
-    dependencies:
-      '@apollo/client': 3.12.10(@types/react@19.0.8)(graphql@16.10.0)(react-dom@19.0.0(react@19.0.0))(react@19.0.0)
-      '@cosmjs/amino': 0.32.4
-      '@cosmjs/proto-signing': 0.32.4
-      '@cosmjs/stargate': 0.32.4(bufferutil@4.0.9)(utf-8-validate@6.0.5)
-      '@ethersproject/bytes': 5.7.0
-      '@injectivelabs/abacus-proto-ts': 1.13.3
-      '@injectivelabs/core-proto-ts': 1.13.4
-      '@injectivelabs/exceptions': 1.14.40(google-protobuf@3.21.4)
-      '@injectivelabs/grpc-web': 0.0.1(google-protobuf@3.21.4)
-      '@injectivelabs/grpc-web-node-http-transport': 0.0.2(@injectivelabs/grpc-web@0.0.1(google-protobuf@3.21.4))
-      '@injectivelabs/grpc-web-react-native-transport': 0.0.2(@injectivelabs/grpc-web@0.0.1(google-protobuf@3.21.4))
-      '@injectivelabs/indexer-proto-ts': 1.13.5
-      '@injectivelabs/mito-proto-ts': 1.13.2
-      '@injectivelabs/networks': 1.14.40(google-protobuf@3.21.4)
-      '@injectivelabs/olp-proto-ts': 1.13.1
-      '@injectivelabs/test-utils': 1.14.40(google-protobuf@3.21.4)
-      '@injectivelabs/ts-types': 1.14.40
-      '@injectivelabs/utils': 1.14.40(google-protobuf@3.21.4)
-      '@metamask/eth-sig-util': 4.0.1
-      '@noble/curves': 1.8.1
-      axios: 1.7.9
-      bech32: 2.0.0
-      bip39: 3.1.0
-      cosmjs-types: 0.9.0
-      crypto-js: 4.2.0
-      ethereumjs-util: 7.1.5
-      ethers: 6.13.5(bufferutil@4.0.9)(utf-8-validate@6.0.5)
-      google-protobuf: 3.21.4
-      graphql: 16.10.0
-      http-status-codes: 2.3.0
-      keccak256: 1.0.6
-      secp256k1: 4.0.4
-      shx: 0.3.4
-      snakecase-keys: 5.5.0
-    transitivePeerDependencies:
-      - '@types/react'
-      - bufferutil
-      - debug
-      - graphql-ws
-      - react
-      - react-dom
-      - subscriptions-transport-ws
-      - utf-8-validate
-
   '@injectivelabs/sdk-ts@1.14.5(@types/react@19.0.8)(bufferutil@4.0.9)(react-dom@19.0.0(react@19.0.0))(react@19.0.0)(utf-8-validate@5.0.10)':
     dependencies:
       '@apollo/client': 3.12.10(@types/react@19.0.8)(graphql@16.10.0)(react-dom@19.0.0(react@19.0.0))(react@19.0.0)
@@ -36410,6 +36431,41 @@ snapshots:
       - supports-color
       - ts-node
       - utf-8-validate
+
+  '@jest/core@29.7.0(babel-plugin-macros@3.1.0)(ts-node@10.9.2(@swc/core@1.10.14(@swc/helpers@0.5.15))(@types/node@20.17.9)(typescript@5.6.3))':
+    dependencies:
+      '@jest/console': 29.7.0
+      '@jest/reporters': 29.7.0
+      '@jest/test-result': 29.7.0
+      '@jest/transform': 29.7.0
+      '@jest/types': 29.6.3
+      '@types/node': 20.17.9
+      ansi-escapes: 4.3.2
+      chalk: 4.1.2
+      ci-info: 3.9.0
+      exit: 0.1.2
+      graceful-fs: 4.2.11
+      jest-changed-files: 29.7.0
+      jest-config: 29.7.0(@types/node@20.17.9)(babel-plugin-macros@3.1.0)(ts-node@10.9.2(@swc/core@1.10.14(@swc/helpers@0.5.15))(@types/node@20.17.9)(typescript@5.6.3))
+      jest-haste-map: 29.7.0
+      jest-message-util: 29.7.0
+      jest-regex-util: 29.6.3
+      jest-resolve: 29.7.0
+      jest-resolve-dependencies: 29.7.0
+      jest-runner: 29.7.0
+      jest-runtime: 29.7.0
+      jest-snapshot: 29.7.0
+      jest-util: 29.7.0
+      jest-validate: 29.7.0
+      jest-watcher: 29.7.0
+      micromatch: 4.0.8
+      pretty-format: 29.7.0
+      slash: 3.0.0
+      strip-ansi: 6.0.1
+    transitivePeerDependencies:
+      - babel-plugin-macros
+      - supports-color
+      - ts-node
 
   '@jest/core@29.7.0(babel-plugin-macros@3.1.0)(ts-node@10.9.2(@swc/core@1.10.14(@swc/helpers@0.5.15))(@types/node@20.17.9)(typescript@5.7.3))':
     dependencies:
@@ -41412,6 +41468,22 @@ snapshots:
     transitivePeerDependencies:
       - debug
 
+  '@paradex/sdk@0.6.0(encoding@0.1.13)':
+    dependencies:
+      '@starkware-industries/starkware-crypto-utils': 0.2.1
+      bignumber.js: 9.1.2
+      starknet: 5.29.0(encoding@0.1.13)
+    transitivePeerDependencies:
+      - encoding
+
+  '@paradex/sdk@file:../paradex/paradex.js(encoding@0.1.13)':
+    dependencies:
+      '@starkware-industries/starkware-crypto-utils': 0.2.1
+      bignumber.js: 9.1.2
+      starknet: 5.29.0(encoding@0.1.13)
+    transitivePeerDependencies:
+      - encoding
+
   '@parcel/watcher-android-arm64@2.5.1':
     optional: true
 
@@ -43209,6 +43281,24 @@ snapshots:
     optional: true
 
   '@rollup/rollup-win32-x64-msvc@4.34.6':
+    optional: true
+
+  '@rometools/cli-darwin-arm64@12.1.3':
+    optional: true
+
+  '@rometools/cli-darwin-x64@12.1.3':
+    optional: true
+
+  '@rometools/cli-linux-arm64@12.1.3':
+    optional: true
+
+  '@rometools/cli-linux-x64@12.1.3':
+    optional: true
+
+  '@rometools/cli-win32-arm64@12.1.3':
+    optional: true
+
+  '@rometools/cli-win32-x64@12.1.3':
     optional: true
 
   '@rtsao/scc@1.1.0': {}
@@ -45597,6 +45687,25 @@ snapshots:
 
   '@starknet-io/types-js@0.7.10': {}
 
+  '@starkware-industries/starkware-crypto-utils@0.2.1':
+    dependencies:
+      assert: 2.1.0
+      bip39: 3.1.0
+      bn.js: 4.12.1
+      brorand: 1.1.0
+      buffer: 6.0.3
+      crypto-browserify: 3.12.1
+      elliptic: 6.6.1
+      enc-utils: 3.0.0
+      ethereumjs-wallet: 1.0.2
+      hash.js: 1.1.7
+      hmac-drbg: 1.0.1
+      inherits: 2.0.4
+      js-sha3: 0.8.0
+      minimalistic-assert: 1.0.1
+      minimalistic-crypto-utils: 1.0.1
+      stream-browserify: 3.0.0
+
   '@story-protocol/core-sdk@1.2.0-rc.3(bufferutil@4.0.9)(typescript@5.7.3)(utf-8-validate@6.0.5)(zod@3.24.1)':
     dependencies:
       abitype: 0.10.3(typescript@5.7.3)(zod@3.24.1)
@@ -47140,7 +47249,7 @@ snapshots:
     dependencies:
       '@typescript-eslint/types': 8.23.0
       '@typescript-eslint/visitor-keys': 8.23.0
-      debug: 4.4.0(supports-color@8.1.1)
+      debug: 4.4.0
       fast-glob: 3.3.3
       is-glob: 4.0.3
       minimatch: 9.0.5
@@ -47450,13 +47559,13 @@ snapshots:
     transitivePeerDependencies:
       - supports-color
 
-  '@vitest/eslint-plugin@1.0.1(@typescript-eslint/utils@8.23.0(eslint@9.19.0(jiti@2.4.2))(typescript@5.6.3))(eslint@9.19.0(jiti@2.4.2))(typescript@5.6.3)(vitest@2.1.5(@types/node@22.13.1)(jsdom@25.0.1(bufferutil@4.0.9)(canvas@2.11.2(encoding@0.1.13))(utf-8-validate@6.0.5))(terser@5.38.1))':
+  '@vitest/eslint-plugin@1.0.1(@typescript-eslint/utils@8.23.0(eslint@9.19.0(jiti@2.4.2))(typescript@5.6.3))(eslint@9.19.0(jiti@2.4.2))(typescript@5.6.3)(vitest@2.1.5(@types/node@20.17.9)(jsdom@25.0.1(bufferutil@4.0.9)(canvas@2.11.2(encoding@0.1.13))(utf-8-validate@5.0.10))(terser@5.38.1))':
     dependencies:
       eslint: 9.19.0(jiti@2.4.2)
     optionalDependencies:
       '@typescript-eslint/utils': 8.23.0(eslint@9.19.0(jiti@2.4.2))(typescript@5.6.3)
       typescript: 5.6.3
-      vitest: 2.1.5(@types/node@22.13.1)(jsdom@25.0.1(bufferutil@4.0.9)(canvas@2.11.2(encoding@0.1.13))(utf-8-validate@6.0.5))(terser@5.38.1)
+      vitest: 2.1.5(@types/node@20.17.9)(jsdom@25.0.1(bufferutil@4.0.9)(canvas@2.11.2(encoding@0.1.13))(utf-8-validate@5.0.10))(terser@5.38.1)
 
   '@vitest/expect@0.34.6':
     dependencies:
@@ -47518,6 +47627,14 @@ snapshots:
       magic-string: 0.30.17
     optionalDependencies:
       vite: 5.4.12(@types/node@22.13.1)(terser@5.38.1)
+
+  '@vitest/mocker@2.1.5(vite@5.4.12(@types/node@20.17.9)(terser@5.38.1))':
+    dependencies:
+      '@vitest/spy': 2.1.5
+      estree-walker: 3.0.3
+      magic-string: 0.30.17
+    optionalDependencies:
+      vite: 5.4.12(@types/node@20.17.9)(terser@5.38.1)
 
   '@vitest/mocker@2.1.5(vite@5.4.12(@types/node@22.13.1)(terser@5.38.1))':
     dependencies:
@@ -48129,7 +48246,7 @@ snapshots:
     dependencies:
       '@walletconnect/jsonrpc-utils': 1.0.8
       '@walletconnect/safe-json': 1.0.2
-      cross-fetch: 3.1.8(encoding@0.1.13)
+      cross-fetch: 3.2.0(encoding@0.1.13)
       events: 3.3.0
     transitivePeerDependencies:
       - encoding
@@ -49014,6 +49131,13 @@ snapshots:
 
   abbrev@2.0.0: {}
 
+  abi-wan-kanabi@1.0.3:
+    dependencies:
+      fs-extra: 10.1.0
+      rome: 12.1.3
+      typescript: 4.9.5
+      yargs: 17.7.2
+
   abi-wan-kanabi@2.2.4:
     dependencies:
       ansicolors: 0.3.2
@@ -49135,7 +49259,7 @@ snapshots:
 
   agent-base@6.0.2:
     dependencies:
-      debug: 4.4.0(supports-color@8.1.1)
+      debug: 4.4.0
     transitivePeerDependencies:
       - supports-color
 
@@ -49809,6 +49933,13 @@ snapshots:
     transitivePeerDependencies:
       - debug
 
+  axios@0.27.2:
+    dependencies:
+      follow-redirects: 1.15.9
+      form-data: 4.0.1
+    transitivePeerDependencies:
+      - debug
+
   axios@0.27.2(debug@4.3.4):
     dependencies:
       follow-redirects: 1.15.9(debug@4.3.4)
@@ -49849,7 +49980,7 @@ snapshots:
 
   axios@1.7.9:
     dependencies:
-      follow-redirects: 1.15.9(debug@4.3.4)
+      follow-redirects: 1.15.9
       form-data: 4.0.1
       proxy-from-env: 1.1.0
     transitivePeerDependencies:
@@ -51487,9 +51618,9 @@ snapshots:
     dependencies:
       layout-base: 2.0.1
 
-  cosmiconfig-typescript-loader@5.1.0(@types/node@22.13.1)(cosmiconfig@8.3.6(typescript@5.6.3))(typescript@5.6.3):
+  cosmiconfig-typescript-loader@5.1.0(@types/node@20.17.9)(cosmiconfig@8.3.6(typescript@5.6.3))(typescript@5.6.3):
     dependencies:
-      '@types/node': 22.13.1
+      '@types/node': 20.17.9
       cosmiconfig: 8.3.6(typescript@5.6.3)
       jiti: 1.21.7
       typescript: 5.6.3
@@ -51591,6 +51722,21 @@ snapshots:
       ripemd160: 2.0.2
       safe-buffer: 5.2.1
       sha.js: 2.4.11
+
+  create-jest@29.7.0(@types/node@20.17.9)(babel-plugin-macros@3.1.0)(ts-node@10.9.2(@swc/core@1.10.14(@swc/helpers@0.5.15))(@types/node@20.17.9)(typescript@5.6.3)):
+    dependencies:
+      '@jest/types': 29.6.3
+      chalk: 4.1.2
+      exit: 0.1.2
+      graceful-fs: 4.2.11
+      jest-config: 29.7.0(@types/node@20.17.9)(babel-plugin-macros@3.1.0)(ts-node@10.9.2(@swc/core@1.10.14(@swc/helpers@0.5.15))(@types/node@20.17.9)(typescript@5.6.3))
+      jest-util: 29.7.0
+      prompts: 2.4.2
+    transitivePeerDependencies:
+      - '@types/node'
+      - babel-plugin-macros
+      - supports-color
+      - ts-node
 
   create-jest@29.7.0(@types/node@20.17.9)(babel-plugin-macros@3.1.0)(ts-node@10.9.2(@swc/core@1.10.14(@swc/helpers@0.5.15))(@types/node@20.17.9)(typescript@5.7.3)):
     dependencies:
@@ -52226,6 +52372,10 @@ snapshots:
     dependencies:
       ms: 2.1.3
 
+  debug@4.4.0:
+    dependencies:
+      ms: 2.1.3
+
   debug@4.4.0(supports-color@5.5.0):
     dependencies:
       ms: 2.1.3
@@ -52810,6 +52960,11 @@ snapshots:
   emojis-list@3.0.0: {}
 
   emoticon@4.1.0: {}
+
+  enc-utils@3.0.0:
+    dependencies:
+      is-typedarray: 1.0.0
+      typedarray-to-buffer: 3.1.5
 
   encode-utf8@1.0.3: {}
 
@@ -53434,7 +53589,7 @@ snapshots:
       ajv: 6.12.6
       chalk: 4.1.2
       cross-spawn: 7.0.6
-      debug: 4.4.0(supports-color@8.1.1)
+      debug: 4.4.0
       escape-string-regexp: 4.0.0
       eslint-scope: 8.2.0
       eslint-visitor-keys: 4.2.0
@@ -53654,6 +53809,17 @@ snapshots:
       create-hash: 1.2.0
       ethereum-cryptography: 0.1.3
       rlp: 2.2.7
+
+  ethereumjs-wallet@1.0.2:
+    dependencies:
+      aes-js: 3.1.2
+      bs58check: 2.1.2
+      ethereum-cryptography: 0.1.3
+      ethereumjs-util: 7.1.5
+      randombytes: 2.1.0
+      scrypt-js: 3.0.1
+      utf8: 3.0.0
+      uuid: 8.3.2
 
   ethers-multicall-provider@5.0.0(bufferutil@4.0.9)(lodash@4.17.21)(utf-8-validate@5.0.10):
     dependencies:
@@ -54294,6 +54460,8 @@ snapshots:
   fmix@0.1.0:
     dependencies:
       imul: 1.0.1
+
+  follow-redirects@1.15.9: {}
 
   follow-redirects@1.15.9(debug@4.3.4):
     optionalDependencies:
@@ -55552,7 +55720,7 @@ snapshots:
   http-proxy-agent@7.0.2:
     dependencies:
       agent-base: 7.1.3
-      debug: 4.4.0(supports-color@8.1.1)
+      debug: 4.4.0
     transitivePeerDependencies:
       - supports-color
 
@@ -55610,14 +55778,14 @@ snapshots:
   https-proxy-agent@5.0.1:
     dependencies:
       agent-base: 6.0.2
-      debug: 4.4.0(supports-color@8.1.1)
+      debug: 4.4.0
     transitivePeerDependencies:
       - supports-color
 
   https-proxy-agent@7.0.6:
     dependencies:
       agent-base: 7.1.3
-      debug: 4.4.0(supports-color@8.1.1)
+      debug: 4.4.0
     transitivePeerDependencies:
       - supports-color
 
@@ -56332,7 +56500,7 @@ snapshots:
 
   istanbul-lib-source-maps@4.0.1:
     dependencies:
-      debug: 4.4.0(supports-color@8.1.1)
+      debug: 4.4.0
       istanbul-lib-coverage: 3.2.2
       source-map: 0.6.1
     transitivePeerDependencies:
@@ -56500,6 +56668,25 @@ snapshots:
       - ts-node
       - utf-8-validate
 
+  jest-cli@29.7.0(@types/node@20.17.9)(babel-plugin-macros@3.1.0)(ts-node@10.9.2(@swc/core@1.10.14(@swc/helpers@0.5.15))(@types/node@20.17.9)(typescript@5.6.3)):
+    dependencies:
+      '@jest/core': 29.7.0(babel-plugin-macros@3.1.0)(ts-node@10.9.2(@swc/core@1.10.14(@swc/helpers@0.5.15))(@types/node@20.17.9)(typescript@5.6.3))
+      '@jest/test-result': 29.7.0
+      '@jest/types': 29.6.3
+      chalk: 4.1.2
+      create-jest: 29.7.0(@types/node@20.17.9)(babel-plugin-macros@3.1.0)(ts-node@10.9.2(@swc/core@1.10.14(@swc/helpers@0.5.15))(@types/node@20.17.9)(typescript@5.6.3))
+      exit: 0.1.2
+      import-local: 3.2.0
+      jest-config: 29.7.0(@types/node@20.17.9)(babel-plugin-macros@3.1.0)(ts-node@10.9.2(@swc/core@1.10.14(@swc/helpers@0.5.15))(@types/node@20.17.9)(typescript@5.6.3))
+      jest-util: 29.7.0
+      jest-validate: 29.7.0
+      yargs: 17.7.2
+    transitivePeerDependencies:
+      - '@types/node'
+      - babel-plugin-macros
+      - supports-color
+      - ts-node
+
   jest-cli@29.7.0(@types/node@20.17.9)(babel-plugin-macros@3.1.0)(ts-node@10.9.2(@swc/core@1.10.14(@swc/helpers@0.5.15))(@types/node@20.17.9)(typescript@5.7.3)):
     dependencies:
       '@jest/core': 29.7.0(babel-plugin-macros@3.1.0)(ts-node@10.9.2(@swc/core@1.10.14(@swc/helpers@0.5.15))(@types/node@20.17.9)(typescript@5.7.3))
@@ -56590,6 +56777,37 @@ snapshots:
       - canvas
       - supports-color
       - utf-8-validate
+
+  jest-config@29.7.0(@types/node@20.17.9)(babel-plugin-macros@3.1.0)(ts-node@10.9.2(@swc/core@1.10.14(@swc/helpers@0.5.15))(@types/node@20.17.9)(typescript@5.6.3)):
+    dependencies:
+      '@babel/core': 7.26.7
+      '@jest/test-sequencer': 29.7.0
+      '@jest/types': 29.6.3
+      babel-jest: 29.7.0(@babel/core@7.26.7)
+      chalk: 4.1.2
+      ci-info: 3.9.0
+      deepmerge: 4.3.1
+      glob: 7.2.3
+      graceful-fs: 4.2.11
+      jest-circus: 29.7.0(babel-plugin-macros@3.1.0)
+      jest-environment-node: 29.7.0
+      jest-get-type: 29.6.3
+      jest-regex-util: 29.6.3
+      jest-resolve: 29.7.0
+      jest-runner: 29.7.0
+      jest-util: 29.7.0
+      jest-validate: 29.7.0
+      micromatch: 4.0.8
+      parse-json: 5.2.0
+      pretty-format: 29.7.0
+      slash: 3.0.0
+      strip-json-comments: 3.1.1
+    optionalDependencies:
+      '@types/node': 20.17.9
+      ts-node: 10.9.2(@swc/core@1.10.14(@swc/helpers@0.5.15))(@types/node@20.17.9)(typescript@5.6.3)
+    transitivePeerDependencies:
+      - babel-plugin-macros
+      - supports-color
 
   jest-config@29.7.0(@types/node@20.17.9)(babel-plugin-macros@3.1.0)(ts-node@10.9.2(@swc/core@1.10.14(@swc/helpers@0.5.15))(@types/node@20.17.9)(typescript@5.7.3)):
     dependencies:
@@ -57209,6 +57427,18 @@ snapshots:
       '@jest/types': 29.6.3
       import-local: 3.2.0
       jest-cli: 29.7.0(@types/node@20.17.9)(babel-plugin-macros@3.1.0)(ts-node@10.9.2(@swc/core@1.10.14(@swc/helpers@0.5.15))(@types/node@20.17.9)(typescript@5.7.3))
+    transitivePeerDependencies:
+      - '@types/node'
+      - babel-plugin-macros
+      - supports-color
+      - ts-node
+
+  jest@29.7.0(@types/node@20.17.9)(babel-plugin-macros@3.1.0)(ts-node@10.9.2(@swc/core@1.10.14(@swc/helpers@0.5.15))(@types/node@20.17.9)(typescript@5.6.3)):
+    dependencies:
+      '@jest/core': 29.7.0(babel-plugin-macros@3.1.0)(ts-node@10.9.2(@swc/core@1.10.14(@swc/helpers@0.5.15))(@types/node@20.17.9)(typescript@5.6.3))
+      '@jest/types': 29.6.3
+      import-local: 3.2.0
+      jest-cli: 29.7.0(@types/node@20.17.9)(babel-plugin-macros@3.1.0)(ts-node@10.9.2(@swc/core@1.10.14(@swc/helpers@0.5.15))(@types/node@20.17.9)(typescript@5.6.3))
     transitivePeerDependencies:
       - '@types/node'
       - babel-plugin-macros
@@ -58277,6 +58507,8 @@ snapshots:
   loose-envify@1.4.0:
     dependencies:
       js-tokens: 4.0.0
+
+  lossless-json@2.0.11: {}
 
   lossless-json@4.0.2: {}
 
@@ -60168,6 +60400,18 @@ snapshots:
       onnxruntime-common: 1.20.0-dev.20241016-2b8fc5529b
       platform: 1.3.6
       protobufjs: 7.4.0
+
+  open-jsonrpc-provider@0.2.1(bufferutil@4.0.9)(utf-8-validate@5.0.10):
+    dependencies:
+      axios: 0.27.2
+      reconnecting-websocket: 4.4.0
+      websocket: 1.0.35
+      ws: 8.18.0(bufferutil@4.0.9)(utf-8-validate@5.0.10)
+    transitivePeerDependencies:
+      - bufferutil
+      - debug
+      - supports-color
+      - utf-8-validate
 
   open-jsonrpc-provider@0.2.1(bufferutil@4.0.9)(utf-8-validate@6.0.5):
     dependencies:
@@ -63011,6 +63255,15 @@ snapshots:
       '@rollup/rollup-win32-x64-msvc': 4.34.6
       fsevents: 2.3.3
 
+  rome@12.1.3:
+    optionalDependencies:
+      '@rometools/cli-darwin-arm64': 12.1.3
+      '@rometools/cli-darwin-x64': 12.1.3
+      '@rometools/cli-linux-arm64': 12.1.3
+      '@rometools/cli-linux-x64': 12.1.3
+      '@rometools/cli-win32-arm64': 12.1.3
+      '@rometools/cli-win32-x64': 12.1.3
+
   roughjs@4.6.6:
     dependencies:
       hachure-fill: 0.5.2
@@ -63663,7 +63916,7 @@ snapshots:
   socks-proxy-agent@8.0.5:
     dependencies:
       agent-base: 7.1.3
-      debug: 4.4.0(supports-color@8.1.1)
+      debug: 4.4.0
       socks: 2.8.3
     transitivePeerDependencies:
       - supports-color
@@ -64107,6 +64360,20 @@ snapshots:
   standard-http-error@2.0.1:
     dependencies:
       standard-error: 1.1.0
+
+  starknet@5.29.0(encoding@0.1.13):
+    dependencies:
+      '@noble/curves': 1.3.0
+      '@scure/base': 1.1.9
+      '@scure/starknet': 1.0.0
+      abi-wan-kanabi-v1: abi-wan-kanabi@1.0.3
+      abi-wan-kanabi-v2: abi-wan-kanabi@2.2.4
+      isomorphic-fetch: 3.0.0(encoding@0.1.13)
+      lossless-json: 2.0.11
+      pako: 2.1.0
+      url-join: 4.0.1
+    transitivePeerDependencies:
+      - encoding
 
   starknet@6.18.0(encoding@0.1.13):
     dependencies:
@@ -65467,7 +65734,7 @@ snapshots:
       cac: 6.7.14
       chokidar: 4.0.3
       consola: 3.4.0
-      debug: 4.4.0(supports-color@8.1.1)
+      debug: 4.4.0
       esbuild: 0.24.2
       joycon: 3.1.1
       picocolors: 1.1.1
@@ -65501,7 +65768,7 @@ snapshots:
   tuf-js@2.2.1:
     dependencies:
       '@tufjs/models': 2.0.1
-      debug: 4.4.0(supports-color@8.1.1)
+      debug: 4.4.0
       make-fetch-happen: 13.0.1
     transitivePeerDependencies:
       - supports-color
@@ -66253,17 +66520,17 @@ snapshots:
       - utf-8-validate
       - zod
 
-  viem@2.21.58(bufferutil@4.0.9)(typescript@5.6.3)(utf-8-validate@6.0.5)(zod@3.24.1):
+  viem@2.21.58(bufferutil@4.0.9)(typescript@5.6.3)(utf-8-validate@5.0.10)(zod@3.24.1):
     dependencies:
       '@noble/curves': 1.7.0
       '@noble/hashes': 1.6.1
       '@scure/bip32': 1.6.0
       '@scure/bip39': 1.5.0
       abitype: 1.0.7(typescript@5.6.3)(zod@3.24.1)
-      isows: 1.0.6(ws@8.18.0(bufferutil@4.0.9)(utf-8-validate@6.0.5))
+      isows: 1.0.6(ws@8.18.0(bufferutil@4.0.9)(utf-8-validate@5.0.10))
       ox: 0.4.4(typescript@5.6.3)(zod@3.24.1)
       webauthn-p256: 0.0.10
-      ws: 8.18.0(bufferutil@4.0.9)(utf-8-validate@6.0.5)
+      ws: 8.18.0(bufferutil@4.0.9)(utf-8-validate@5.0.10)
     optionalDependencies:
       typescript: 5.6.3
     transitivePeerDependencies:
@@ -66486,6 +66753,24 @@ snapshots:
       - supports-color
       - terser
 
+  vite-node@2.1.5(@types/node@20.17.9)(terser@5.38.1):
+    dependencies:
+      cac: 6.7.14
+      debug: 4.4.0
+      es-module-lexer: 1.6.0
+      pathe: 1.1.2
+      vite: 5.4.12(@types/node@20.17.9)(terser@5.38.1)
+    transitivePeerDependencies:
+      - '@types/node'
+      - less
+      - lightningcss
+      - sass
+      - sass-embedded
+      - stylus
+      - sugarss
+      - supports-color
+      - terser
+
   vite-node@2.1.5(@types/node@22.13.1)(terser@5.38.1):
     dependencies:
       cac: 6.7.14
@@ -66543,7 +66828,7 @@ snapshots:
   vite-node@2.1.9(@types/node@22.13.1)(terser@5.38.1):
     dependencies:
       cac: 6.7.14
-      debug: 4.4.0(supports-color@8.1.1)
+      debug: 4.4.0
       es-module-lexer: 1.6.0
       pathe: 1.1.2
       vite: 5.4.12(@types/node@22.13.1)(terser@5.38.1)
@@ -67122,6 +67407,42 @@ snapshots:
       - supports-color
       - terser
 
+  vitest@2.1.5(@types/node@20.17.9)(jsdom@25.0.1(bufferutil@4.0.9)(canvas@2.11.2(encoding@0.1.13))(utf-8-validate@5.0.10))(terser@5.38.1):
+    dependencies:
+      '@vitest/expect': 2.1.5
+      '@vitest/mocker': 2.1.5(vite@5.4.12(@types/node@20.17.9)(terser@5.38.1))
+      '@vitest/pretty-format': 2.1.9
+      '@vitest/runner': 2.1.5
+      '@vitest/snapshot': 2.1.5
+      '@vitest/spy': 2.1.5
+      '@vitest/utils': 2.1.5
+      chai: 5.1.2
+      debug: 4.4.0
+      expect-type: 1.1.0
+      magic-string: 0.30.17
+      pathe: 1.1.2
+      std-env: 3.8.0
+      tinybench: 2.9.0
+      tinyexec: 0.3.2
+      tinypool: 1.0.2
+      tinyrainbow: 1.2.0
+      vite: 5.4.12(@types/node@20.17.9)(terser@5.38.1)
+      vite-node: 2.1.5(@types/node@20.17.9)(terser@5.38.1)
+      why-is-node-running: 2.3.0
+    optionalDependencies:
+      '@types/node': 20.17.9
+      jsdom: 25.0.1(bufferutil@4.0.9)(canvas@2.11.2(encoding@0.1.13))(utf-8-validate@5.0.10)
+    transitivePeerDependencies:
+      - less
+      - lightningcss
+      - msw
+      - sass
+      - sass-embedded
+      - stylus
+      - sugarss
+      - supports-color
+      - terser
+
   vitest@2.1.5(@types/node@22.13.1)(jsdom@25.0.1(bufferutil@4.0.9)(canvas@2.11.2(encoding@0.1.13))(utf-8-validate@6.0.5))(terser@5.38.1):
     dependencies:
       '@vitest/expect': 2.1.5
@@ -67276,7 +67597,7 @@ snapshots:
       '@vitest/spy': 2.1.9
       '@vitest/utils': 2.1.9
       chai: 5.1.2
-      debug: 4.4.0(supports-color@8.1.1)
+      debug: 4.4.0
       expect-type: 1.1.0
       magic-string: 0.30.17
       pathe: 1.1.2

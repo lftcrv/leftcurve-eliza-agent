@@ -20,8 +20,8 @@
     ],
     "dependencies": {
         "@elizaos/core": "workspace:*",
-        "tsup": "^8.3.5",
-        "starknet": "6.18.0"
+        "starknet": "^5.24.3",
+        "tsup": "^8.3.5"
     },
     "scripts": {
         "dev": "tsup --watch",
