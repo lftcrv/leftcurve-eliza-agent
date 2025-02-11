@@ -3,6 +3,7 @@ import { type Fraction, Percent } from "@uniswap/sdk-core";
 import { Account, Contract, RpcProvider } from "starknet";
 import { STARKNET_TOKENS } from "./constants";
 import { SwapContent } from "../actions/types";
+import { TechnicalAnalysis } from "../providers/types";
 
 export const getTokenBalance = async (
     runtime: IAgentRuntime,
@@ -152,3 +153,19 @@ export function isSwapContent(content: SwapContent): content is SwapContent {
     }
     return true;
 }
+
+
+export const fetchTechnicalAnalysis = async (asset: string = 'btc'): Promise<TechnicalAnalysis> => {
+    const response = await fetch(
+        `http://127.0.0.1:8080/analysis/technical?assets=${asset}`,
+        {
+            headers: {
+                'accept': 'application/json',
+                'x-api-key': 'your-secret-api-key'
+            }
+        }
+    );
+    
+    if (!response.ok) throw new Error(`HTTP Error: ${response.status}`);
+    return response.json();
+};
