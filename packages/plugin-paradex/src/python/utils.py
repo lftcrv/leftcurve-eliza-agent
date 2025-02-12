@@ -5,6 +5,7 @@ import logging
 import random
 import re
 import time
+import os
 from enum import IntEnum
 from typing import Callable, Dict, Optional, Tuple
 
@@ -35,8 +36,13 @@ from starkware.crypto.signature.signature import EC_ORDER
 from helpers.account import Account
 
 
-paradex_http_url = "https://api.testnet.paradex.trade/v1"
+def get_paradex_url():
+    network = os.getenv("PARADEX_NETWORK", "testnet").lower()
+    if network not in ["testnet", "prod"]:
+        raise ValueError("PARADEX_NETWORK must be either 'testnet' or 'prod'")
+    return f"https://api.{network}.paradex.trade/v1"
 
+paradex_http_url = get_paradex_url()
 
 def build_auth_message(chainId: int, now: int, expiry: int) -> TypedData:
     message = {

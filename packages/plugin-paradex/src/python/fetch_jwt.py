@@ -18,7 +18,13 @@ from utils import (
 )
 from shared.api_client import get_paradex_config
 
-paradex_http_url = "https://api.testnet.paradex.trade/v1"
+def get_paradex_url():
+    network = os.getenv("PARADEX_NETWORK", "testnet").lower()
+    if network not in ["testnet", "prod"]:
+        raise ValueError("PARADEX_NETWORK must be either 'testnet' or 'prod'")
+    return f"https://api.{network}.paradex.trade/v1"
+
+paradex_http_url = get_paradex_url()
 
 async def get_jwt_token(
     paradex_config: Dict,

@@ -1,5 +1,13 @@
 import { Action, IAgentRuntime, Memory, State } from "@elizaos/core";
 
+function getParadexUrl(): string {
+    const network = (process.env.PARADEX_NETWORK || 'testnet').toLowerCase();
+    if (network !== 'testnet' && network !== 'prod') {
+        throw new Error("PARADEX_NETWORK must be either 'testnet' or 'prod'");
+    }
+    return `https://api.${network}.paradex.trade/v1`;
+}
+
 export const getMarketsAction: Action = {
     name: "GET_MARKETS",
     similes: ["SHOW_MARKETS", "LIST_MARKETS", "MARKETS_INFO"],
@@ -8,9 +16,10 @@ export const getMarketsAction: Action = {
         return true;
     },
     handler: async (runtime: IAgentRuntime, message: Memory, state?: State) => {
+        const baseUrl = getParadexUrl();
         try {
             const response = await fetch(
-                "https://api.testnet.paradex.trade/v1/markets",
+                `${baseUrl}/markets`,
                 {
                     headers: { Accept: "application/json" },
                 }

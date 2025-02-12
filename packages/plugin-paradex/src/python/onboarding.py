@@ -1,5 +1,6 @@
 import asyncio
 import logging
+import sys
 import os
 import time
 import traceback
@@ -16,8 +17,13 @@ from utils import (
 )
 from shared.api_client import get_paradex_config
 
-paradex_http_url = "https://api.prod.paradex.trade/v1"
+def get_paradex_url():
+    network = os.getenv("PARADEX_NETWORK", "testnet").lower()
+    if network not in ["testnet", "prod"]:
+        raise ValueError("PARADEX_NETWORK must be either 'testnet' or 'prod'")
+    return f"https://api.{network}.paradex.trade/v1"
 
+paradex_http_url = get_paradex_url()
 
 async def perform_onboarding(
     paradex_config: Dict,
@@ -125,18 +131,14 @@ async def get_open_orders(
 
 
 async def main(eth_private_key_hex: str) -> None:
-    # Initialize Ethereum account
     _, eth_account = get_l1_eth_account(eth_private_key_hex)
 
-    # Load Paradex config
     paradex_config = await get_paradex_config(paradex_http_url)
 
-    # Generate Paradex account (only local)
     paradex_account_address, paradex_account_private_key_hex = generate_paradex_account(
         paradex_config, eth_account.key.hex()
     )
 
-    # Onboard generated Paradex account
     logging.info("Onboarding...")
     await perform_onboarding(
         paradex_config,
@@ -146,7 +148,6 @@ async def main(eth_private_key_hex: str) -> None:
         eth_account.address,
     )
 
-    # Get a JWT token to interact with private endpoints
     logging.info("Getting JWT...")
     paradex_jwt = await get_jwt_token(
         paradex_config,
@@ -155,7 +156,6 @@ async def main(eth_private_key_hex: str) -> None:
         paradex_account_private_key_hex,
     )
 
-    # Get account's open orders using the JWT token
     logging.info("Getting account's open orders...")
     open_orders = await get_open_orders(paradex_http_url, paradex_jwt)
 
@@ -163,17 +163,14 @@ async def main(eth_private_key_hex: str) -> None:
 
 
 if __name__ == "__main__":
-    # Logging
     logging.basicConfig(
         level=os.getenv("LOGGING_LEVEL", "INFO"),
         format="%(asctime)s.%(msecs)03d | %(levelname)s | %(message)s",
         datefmt="%Y-%m-%d %H:%M:%S",
     )
 
-    # Load environment variables
-    eth_private_key_hex = "ca4d5d99933f19092bdb9f37e4cf49a8cc0825654840c604a72e129f8f003332";
+    eth_private_key_hex = sys.argv[1] if len(sys.argv) > 1 else os.getenv("ETHEREUM_PRIVATE_KEY")
 
-    # Run main
     try:
         loop = asyncio.get_event_loop()
         loop.run_until_complete(main(eth_private_key_hex))

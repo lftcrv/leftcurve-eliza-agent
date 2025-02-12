@@ -77,7 +77,7 @@ const placeOrderWithPython = (
 
         pythonProcess.stderr.on("data", (data) => {
             // Log stderr output directly for debugging
-            console.log("Python stderr:", data.toString());
+            elizaLogger.debug("Python stderr:", data.toString());
             stderr += data.toString();
         });
 
@@ -166,7 +166,7 @@ export const paradexPlaceOrderAction: Action = {
                 market: "ETH-USD-PERP",
                 side: "buy",
                 type: "market",
-                size: 0.1,
+                size: 0.001,
                 clientId: "order-" + Date.now(),
             };
 

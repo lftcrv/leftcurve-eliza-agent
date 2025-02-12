@@ -16,29 +16,31 @@ interface BBOResponse {
     market: string;
 }
 
+function getParadexUrl(): string {
+    const network = (process.env.PARADEX_NETWORK || "testnet").toLowerCase();
+    if (network !== "testnet" && network !== "prod") {
+        throw new Error("PARADEX_NETWORK must be either 'testnet' or 'prod'");
+    }
+    return `https://api.${network}.paradex.trade/v1`;
+}
+
 export const bboProvider: Provider = {
     get: async (
         runtime: IAgentRuntime,
         message: Memory,
         state?: State & ParadexState
     ) => {
+        const baseUrl = getParadexUrl();
         try {
-            // Fetch watchlist from database
             const walletAdapter = new WalletAdapter(runtime.databaseAdapter.db);
-            const watchlist = await walletAdapter.getWatchlist(
-                message.roomId
-            );
+            const watchlist = await walletAdapter.getWatchlist(message.roomId);
 
-            // Initialize market metrics if not exists in state
             const marketMetrics = state?.marketMetrics || {};
             const results = [];
 
-            // Process each market from the watchlist
             for (const market of watchlist) {
                 try {
-                    const response = await fetch(
-                        `https://api.testnet.paradex.trade/v1/bbo/${market}`
-                    );
+                    const response = await fetch(`${baseUrl}/bbo/${market}`);
 
                     if (!response.ok) {
                         elizaLogger.warn(
@@ -53,17 +55,18 @@ export const bboProvider: Provider = {
                     const spread = lastAsk - lastBid;
                     const spreadPercentage = (spread / lastBid) * 100;
 
-                    // Update market metrics in state
                     marketMetrics[market] = {
                         spread,
                         spreadPercentage,
                         lastBid,
                         lastAsk,
-                        timestamp: Date.now(), // Add timestamp for tracking data freshness
+                        timestamp: Date.now(),
                     };
 
                     results.push(
-                        `${market}: ${lastBid}/${lastAsk} (${spreadPercentage.toFixed(2)}% spread)`
+                        `${market}: ${lastBid}/${lastAsk} (${spreadPercentage.toFixed(
+                            2
+                        )}% spread)`
                     );
                 } catch (marketError) {
                     elizaLogger.error(
@@ -74,18 +77,18 @@ export const bboProvider: Provider = {
                 }
             }
 
-            // Update state if provided
             if (state) {
                 state.marketMetrics = marketMetrics;
-                state.watchlist = watchlist; // Update watchlist in state
+                state.watchlist = watchlist;
             }
 
-            // Return formatted results
             if (results.length === 0) {
                 return "No markets in watchlist or unable to fetch BBO data";
             }
 
-            return `Here are the latest BBO metrics for your watchlist:\n${results.join("\n")}`;
+            return `Here are the latest BBO metrics for your watchlist:\n${results.join(
+                "\n"
+            )}`;
         } catch (error) {
             elizaLogger.error("BBO Provider error:", error);
             return "Unable to fetch BBO data. Please check your watchlist and try again.";
