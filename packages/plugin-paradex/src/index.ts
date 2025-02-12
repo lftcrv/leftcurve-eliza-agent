@@ -13,8 +13,8 @@ import { paradexCancelOrderAction } from "./actions/cancelOrder";
 export const paradexPlugin: Plugin = {
     name: "paradex",
     description: "Paradex Plugin for Eliza",
-    actions: [manageWatchlistAction, paradexFetchAccountInfoAction, paradexPlaceOrderAction, paradexCancelOrderAction],
-    providers: [watchlistProvider, openOrdersProvider, openPositionsProvider],
+    actions: [paradexFetchAccountInfoAction, paradexPlaceOrderAction, paradexCancelOrderAction],
+    providers: [openOrdersProvider, openPositionsProvider],
 };
 
 export default paradexPlugin;

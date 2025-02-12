@@ -1044,6 +1044,7 @@ export async function createAgent(
             getSecret(character, "STARKNET_PRIVATE_KEY")
                 ? starknetPlugin
                 : null,
+            getSecret(character, "STARKNET_PRIVATE_KEY") ? paradexPlugin : null,
             // getSecret(character, "FOOTBALL_API_KEY") ? footballPlugin : null,
             // getSecret(character, "CONFLUX_CORE_PRIVATE_KEY")
             //     ? confluxPlugin
