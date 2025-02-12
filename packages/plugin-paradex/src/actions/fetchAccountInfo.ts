@@ -17,34 +17,32 @@ interface ParadexState extends State {
     accountOrders?: any[];
 }
 
+function getParadexUrl(): string {
+    const network = (process.env.PARADEX_NETWORK || "testnet").toLowerCase();
+    if (network !== "testnet" && network !== "prod") {
+        throw new Error("PARADEX_NETWORK must be either 'testnet' or 'prod'");
+    }
+    return `https://api.${network}.paradex.trade/v1`;
+}
+
 async function fetchAccountInfo(jwt: string, account: string) {
+    const baseUrl = getParadexUrl();
     try {
-        // Fetch account balance
-        const balanceResponse = await fetch(
-            `https://api.prod.paradex.trade/v1/balance`,
-            {
-                headers: {
-                    Authorization: `Bearer ${jwt}`,
-                    Accept: "application/json",
-                },
-            }
-        );
+        const balanceResponse = await fetch(`${baseUrl}/balance`, {
+            headers: {
+                Authorization: `Bearer ${jwt}`,
+                Accept: "application/json",
+            },
+        });
         const balanceData = await balanceResponse.json();
 
-        // Fetch open orders
-        const ordersResponse = await fetch(
-            `https://api.prod.paradex.trade/v1/orders`,
-            {
-                headers: {
-                    Authorization: `Bearer ${jwt}`,
-                    Accept: "application/json",
-                },
-            }
-        );
+        const ordersResponse = await fetch(`${baseUrl}/orders`, {
+            headers: {
+                Authorization: `Bearer ${jwt}`,
+                Accept: "application/json",
+            },
+        });
         const ordersData = await ordersResponse.json();
-        console.log("ordersData", ordersData);
-
-        elizaLogger.success("ordersData", ordersData);
 
         return {
             balance: balanceData,
@@ -59,11 +57,15 @@ async function fetchAccountInfo(jwt: string, account: string) {
     }
 }
 
-export const paradexAuthAction: Action = {
-    name: "PARADEX_AUTH",
-    similes: ["CONNECT_PARADEX", "LOGIN_PARADEX", "AUTHENTICATE_PARADEX"],
+export const paradexFetchAccountInfoAction: Action = {
+    name: "FETCH_PARADEX_ACCOUNT",
+    similes: [
+        "GET_PARADEX_INFO",
+        "CHECK_PARADEX_ACCOUNT",
+        "VIEW_PARADEX_BALANCE",
+    ],
     description:
-        "Handles Paradex account authentication and fetches account information",
+        "Fetches Paradex account information including balance and orders",
     suppressInitialMessage: true,
 
     validate: async (runtime: IAgentRuntime, message: Memory) => {
@@ -80,7 +82,6 @@ export const paradexAuthAction: Action = {
         }
 
         try {
-            // 1. Get environment variables
             const ethPrivateKey = process.env.ETHEREUM_PRIVATE_KEY;
             if (!ethPrivateKey) {
                 console.error("ETHEREUM_PRIVATE_KEY not set");
@@ -89,7 +90,6 @@ export const paradexAuthAction: Action = {
                 );
             }
 
-            // 2. Get JWT token
             const authResult = await getJwtToken(ethPrivateKey);
 
             if (!authResult.jwt_token) {
@@ -98,27 +98,25 @@ export const paradexAuthAction: Action = {
             }
             console.log("authResult", authResult);
 
-            // 3. Update state with auth info
             state.jwtToken = authResult.jwt_token;
             state.jwtExpiry = authResult.expiry;
             state.starknetAccount = authResult.account_address;
 
-            // 4. Fetch account information
             const accountInfo = await fetchAccountInfo(
                 authResult.jwt_token,
                 authResult.account_address
             );
-            console.log("acciuntInfo:", accountInfo);
 
-            // 5. Update state with account info
             state.accountBalance = accountInfo.balance;
             state.accountOrders = accountInfo.orders;
 
-            console.log("Successfully authenticated and fetched account info");
+            elizaLogger.info("AccountBalance:", accountInfo.balance);
+            elizaLogger.info("accountOrders:", accountInfo.orders);
+            elizaLogger.success("Successfully fetched account information");
 
             return true;
         } catch (error) {
-            console.error("Authentication/Account Info error:", error);
+            console.error("Account Info fetch error:", error);
             if (error instanceof ParadexAuthError) {
                 console.error("Details:", error.details);
             }
@@ -131,13 +129,26 @@ export const paradexAuthAction: Action = {
         [
             {
                 user: "{{user1}}",
-                content: { text: "Connect my Paradex account" },
+                content: { text: "What's my Paradex balance?" },
             },
             {
                 user: "{{agent}}",
                 content: {
-                    text: "Successfully connected to Paradex and fetched account information.",
-                    action: "PARADEX_AUTH",
+                    text: "I've retrieved your Paradex account information and balance.",
+                    action: "FETCH_PARADEX_ACCOUNT",
+                },
+            },
+        ],
+        [
+            {
+                user: "{{user1}}",
+                content: { text: "Show me my Paradex orders" },
+            },
+            {
+                user: "{{agent}}",
+                content: {
+                    text: "Here is your current Paradex account information including orders.",
+                    action: "FETCH_PARADEX_ACCOUNT",
                 },
             },
         ],
