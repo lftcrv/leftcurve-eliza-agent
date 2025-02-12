@@ -22,6 +22,7 @@
         "@avnu/avnu-sdk": "2.1.1",
         "@elizaos/core": "workspace:*",
         "@elizaos/plugin-trustdb": "workspace:*",
+        "@paradex/sdk": "^0.6.0",
         "@uniswap/sdk-core": "6.0.0",
         "@unruggable_starknet/core": "0.1.0",
         "starknet": "6.18.0",
