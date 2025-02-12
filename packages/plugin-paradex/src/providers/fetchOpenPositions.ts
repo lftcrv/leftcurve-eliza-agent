@@ -66,10 +66,6 @@ async function fetchPositions(jwt: string): Promise<PositionResponse> {
         }
 
         const data = await response.json();
-        elizaLogger.info(
-            "Successfully fetched positions:",
-            JSON.stringify(data, null, 2)
-        );
         return data;
     } catch (error) {
         elizaLogger.error("Error fetching positions:", error);
@@ -148,6 +144,7 @@ export const openPositionsProvider: Provider = {
                     const liqPrice = formatNumber(position.liquidation_price);
 
                     const formatted = [
+                        `ID: ${position.id}`,
                         `${position.market} | ${position.side} ${size}`,
                         `Entry: ${entryPrice} | Mark: ${markPrice}`,
                         `PnL: $${unrealizedPnl} (${roe}% ROE)`,

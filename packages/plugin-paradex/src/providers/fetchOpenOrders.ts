@@ -69,10 +69,6 @@ async function fetchOpenOrders(
         }
 
         const data = await response.json();
-        elizaLogger.info(
-            "Successfully fetched orders:",
-            JSON.stringify(data, null, 2)
-        );
         return data;
     } catch (error) {
         elizaLogger.error("Error fetching open orders:", error);
@@ -121,7 +117,7 @@ export const openOrdersProvider: Provider = {
                 );
                 const created = new Date(order.created_at).toLocaleString();
 
-                const formatted = `${order.market} | ${order.side} ${size} @ ${price} | Type: ${order.type} | Remaining: ${remainingSize} | Created: ${created}`;
+                const formatted = `ID: ${order.id} | ${order.market} | ${order.side} ${size} @ ${price} | Type: ${order.type} | Remaining: ${remainingSize} | Created: ${created}`;
                 elizaLogger.info("Formatted order:", formatted);
                 return formatted;
             });
