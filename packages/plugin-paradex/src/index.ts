@@ -4,11 +4,13 @@ import { manageWatchlistAction } from "./actions/manageWatchlist";
 import { getWatchlistAction } from "./actions/getWatchlist";
 import { bboProvider } from "./providers/bbo";
 import { watchlistProvider } from "./providers/watchlist";
+import { paradexAuthAction } from "./actions/authentification";
+import { paradexPlaceOrderAction } from "./actions/placeOrder";
 
 export const paradexPlugin: Plugin = {
     name: "paradex",
     description: "Paradex Plugin for Eliza",
-    actions: [manageWatchlistAction, getWatchlistAction],
+    actions: [manageWatchlistAction, paradexAuthAction, paradexPlaceOrderAction],
     providers: [watchlistProvider],
 };
 
