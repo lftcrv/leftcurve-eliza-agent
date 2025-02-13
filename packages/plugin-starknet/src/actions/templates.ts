@@ -20,7 +20,7 @@ Based on the market data, wallet information, and your trading history, decide i
 
 ### 📊 TRADING STRATEGY:
 1. Review your last trades to avoid oscillating behavior
-3. Each trade must be justified by new market conditions, not just price
+2. Each trade must be justified by new market conditions, not just price
 
 ### 🏦 MINIMUM BALANCE REQUIREMENTS:
 - Keep at least 0.0016 ETH (1600000000000000 wei) for gas fees
