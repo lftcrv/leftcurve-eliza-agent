@@ -136,7 +136,7 @@ export function analyzeHighSupplyHolders(
 
 const AVNU_ASSETS = [
     'BROTHER', 'STRK'
-    //, 'LORDS', 'USDC', 'WSTETH',
+    , 'LORDS', 'USDC', 'WSTETH', 'UNI'
     //'WBTC', 'UNI', 'RETH', 'XSTRK', 'NSTR',
     //'ZEND', 'SWAY', 'SSTR'
 ];

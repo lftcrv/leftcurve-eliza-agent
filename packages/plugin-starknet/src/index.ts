@@ -6,14 +6,16 @@ import { walletBalancesProvider } from "./providers/walletProvider";
 import { tradeSimulationAction } from "./actions/tradeSimulation";
 import { ParedexLatestAnalysisProvider } from "./providers/ParedexLatestAnalysisProvider";
 import { AvnuLatestAnalysisProvider } from "./providers/AvnuLatestAnalysisProvider";
+import { clearTradeHistoryAction } from "./actions/clearTradeHistory";
+import { timestampProvider } from "./providers/timestampProvider";
 
 
 export const starknetPlugin: Plugin = {
     name: "starknet",
     description: "Starknet Plugin for Eliza",
-    actions: [],
+    actions: [tradeSimulationAction, clearTradeHistoryAction],
     evaluators: [],
-    providers: [ParedexLatestAnalysisProvider, AvnuLatestAnalysisProvider],
+    providers: [timestampProvider,ParedexLatestAnalysisProvider, AvnuLatestAnalysisProvider],
 };
 
 export default starknetPlugin;
