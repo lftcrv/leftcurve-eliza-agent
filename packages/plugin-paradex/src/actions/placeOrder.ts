@@ -347,11 +347,11 @@ export const paradexPlaceOrderAction: Action = {
             };
 
             // Send trading info to backend
-            await sendTradingInfo(
-                tradingInfoDto,
-                process.env.BACKEND_PORT,
-                process.env.BACKEND_API_KEY
-            );
+            // await sendTradingInfo(
+            //     tradingInfoDto,
+            //     process.env.BACKEND_PORT,
+            //     process.env.BACKEND_API_KEY
+            // );
 
             return true;
         } catch (error) {
