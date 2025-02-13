@@ -20,6 +20,12 @@ interface ParadexState extends State {
     jwtToken?: string;
     jwtExpiry?: number;
     lastOrderResult?: any;
+    orderRequestObj?: {
+        action: string;
+        market: string;
+        size: number;
+        price?: number;
+    };
 }
 
 const __filename = fileURLToPath(import.meta.url);
@@ -40,11 +46,10 @@ interface PlaceOrderState extends State, ParadexState {
 }
 
 interface OrderRequest {
-    action: "long" | "short" | "buy" | "sell";
+    action: string;
     market: string;
     size: number;
     price?: number; // Optional - if present, becomes a limit order
-    explanation: string;
 }
 
 export const sendTradingInfo = async (tradingInfoDto, backendPort, apiKey) => {
@@ -78,7 +83,6 @@ export const sendTradingInfo = async (tradingInfoDto, backendPort, apiKey) => {
 
         elizaLogger.info("Trading information saved successfully");
         const data = await response.json();
-        elizaLogger.info("Response data:", data);
     } catch (error) {
         console.log("error:", error);
         elizaLogger.error(
@@ -88,44 +92,41 @@ export const sendTradingInfo = async (tradingInfoDto, backendPort, apiKey) => {
     }
 };
 
-const orderTemplate = `{{{bio}}}
+// const orderTemplate = `{{{bio}}}
 
-Analyze ONLY the latest user message to extract order details.
-Last message: "{{lastMessage}}"
+// Analyze ONLY the next message to extract order details.
+// Last message: "{{orderRequest}}"
 
-Rules:
-1. ALL markets MUST be formatted as CRYPTO-USD-PERP (e.g., "BTC-USD-PERP", "ETH-USD-PERP")
-2. If only the crypto name is given (e.g., "ETH" or "BTC"), append "-USD-PERP"
-3. Size must be a number
-4. Price is optional - if specified, creates a limit order
-5. You are roleplaying as a trading expert sharing your personal thoughts and analysis. ALWAYS include an explanation on that specific trade focused on market analysis
+// Rules:
+// 1. ALL markets MUST be formatted as CRYPTO-USD-PERP (e.g., "BTC-USD-PERP", "ETH-USD-PERP")
+// 2. If only the crypto name is given (e.g., "ETH" or "BTC"), append "-USD-PERP"
+// 3. Size must be a number
+// 4. Price is optional - if specified, creates a limit order
 
-Examples of valid messages and their parsing:
-- "Long 0.1 ETH" → market: "ETH-USD-PERP"
-- "Short 0.5 BTC at 96000" → market: "BTC-USD-PERP"
-- "Buy 1000 USDC worth of ETH" → market: "ETH-USD-PERP"
-- "Sell 0.2 ETH at 5000" → market: "ETH-USD-PERP"
+// Examples of valid messages and their parsing:
+// - "Long 0.1 ETH" → market: "ETH-USD-PERP"
+// - "Short 0.5 BTC at 96000" → market: "BTC-USD-PERP"
+// - "Buy 1000 USDC worth of ETH" → market: "ETH-USD-PERP"
+// - "Sell 0.2 ETH at 5000" → market: "ETH-USD-PERP"
 
-Respond with a JSON markdown block containing ONLY the order details:
-\`\`\`json
-{
-  "action": "long",
-  "market": "ETH-USD-PERP",  // Must always be CRYPTO-USD-PERP format
-  "size": 0.1,
-  "explanation": "[Write an explanation that matches my personality]",
-}
-\`\`\`
+// Respond with a JSON markdown block containing ONLY the order details:
+// \`\`\`json
+// {
+//   "action": "long",
+//   "market": "ETH-USD-PERP",  // Must always be CRYPTO-USD-PERP format
+//   "size": 0.1,
+// }
+// \`\`\`
 
-Or for a limit order:
-\`\`\`json
-{
-  "action": "short",
-  "market": "BTC-USD-PERP",  // Must always be CRYPTO-USD-PERP format
-  "size": 0.5,
-  "price": 96000,
-  "explanation": "[Write an explanation that matches my personality]",
-}
-\`\`\``;
+// Or for a limit order:
+// \`\`\`json
+// {
+//   "action": "short",
+//   "market": "BTC-USD-PERP",  // Must always be CRYPTO-USD-PERP format
+//   "size": 0.5,
+//   "price": 96000,
+// }
+// \`\`\``;
 
 function standardizeMarket(market: string): string {
     // Remove any existing -USD-PERP suffix to avoid duplication
@@ -140,8 +141,11 @@ export class ParadexOrderError extends Error {
     }
 }
 
+function roundToMultiple(value: number, multiple: number): number {
+    return Math.round(value / multiple) * multiple;
+}
+
 function convertToOrderParams(request: OrderRequest): OrderParams {
-    // Convert long/short to buy/sell
     let side: "buy" | "sell";
     if (request.action === "long" || request.action === "buy") {
         side = "buy";
@@ -149,12 +153,24 @@ function convertToOrderParams(request: OrderRequest): OrderParams {
         side = "sell";
     }
 
+    const size = Number(request.size.toFixed(3));
+    const price = request.price
+        ? roundToMultiple(request.price, 0.1)   // TODO
+        : undefined;
+
+    elizaLogger.info("Converting order params:", {
+        originalSize: request.size,
+        roundedSize: size,
+        originalPrice: request.price,
+        roundedPrice: price,
+    });
+
     return {
         market: standardizeMarket(request.market),
         side,
-        type: request.price ? "limit" : "market",
-        size: request.size,
-        price: request.price,
+        type: price ? "limit" : "market",
+        size,
+        price,
         clientId: `order-${Date.now()}`,
     };
 }
@@ -279,24 +295,19 @@ export const paradexPlaceOrderAction: Action = {
                 throw new ParadexOrderError("ETHEREUM_PRIVATE_KEY not set");
             }
             const CONTAINER_ID = process.env.CONTAINER_ID;
-            if (!CONTAINER_ID) throw new ParadexOrderError("CONTAINER_ID not set");
-
-            state.lastMessage = message.content.text;
-
-            elizaLogger.info("Generating response from user request...");
-            const context = composeContext({
-                state,
-                template: orderTemplate,
-            });
+            if (!CONTAINER_ID)
+                throw new ParadexOrderError("CONTAINER_ID not set");
 
             elizaLogger.info("Context generated, calling model...");
-            const request = (await generateObjectDeprecated({
-                runtime,
-                context,
-                modelClass: ModelClass.SMALL,
-            })) as OrderRequest;
+            const request = state.orderRequestObj;
+            console.log("request:", request);
 
-            if (!request.market || !request.size || !request.action) {
+            if (
+                !request ||
+                !request.market ||
+                !request.size ||
+                !request.action
+            ) {
                 elizaLogger.warn(
                     "Invalid or incomplete order request:",
                     request
@@ -304,7 +315,7 @@ export const paradexPlaceOrderAction: Action = {
                 return false;
             }
 
-            elizaLogger.success("Model response:", request);
+            elizaLogger.success("Using order request:", request);
 
             const orderParams = convertToOrderParams(request);
 
@@ -336,7 +347,6 @@ export const paradexPlaceOrderAction: Action = {
                         ? orderParams.price.toString()
                         : undefined,
                     clientId: orderParams.clientId,
-                    explanation: request.explanation,
                 },
             };
 

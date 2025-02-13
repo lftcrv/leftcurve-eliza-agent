@@ -11,12 +11,13 @@ import { openPositionsProvider } from "./providers/fetchOpenPositions";
 import { paradexCancelOrderAction } from "./actions/cancelOrder";
 import { paradexOnboardingAction } from "./actions/onboarding";
 import { analysisParadexProvider } from "./providers/backendAnalysisParadex";
+import { actOnParadexAction } from "./actions/actOnParadex";
 
 export const paradexPlugin: Plugin = {
     name: "paradex",
     description: "Paradex Plugin for Eliza",
-    actions: [paradexFetchAccountInfoAction, paradexPlaceOrderAction, paradexCancelOrderAction, paradexOnboardingAction],
-    providers: [openOrdersProvider, openPositionsProvider, analysisParadexProvider],
+    actions: [paradexFetchAccountInfoAction, paradexPlaceOrderAction, paradexCancelOrderAction, paradexOnboardingAction, actOnParadexAction],
+    providers: [openOrdersProvider, openPositionsProvider],
 };
 
 export default paradexPlugin;
