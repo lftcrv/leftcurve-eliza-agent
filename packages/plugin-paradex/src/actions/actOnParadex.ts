@@ -14,6 +14,7 @@ import { bboProvider } from "../providers/bbo";
 import { paradexPlaceOrderAction } from "./placeOrder";
 import { paradexCancelOrderAction } from "./cancelOrder";
 import { analysisParadexProvider } from "../providers/backendAnalysisParadex";
+import { paradexBalanceProvider } from "../providers/balanceParadex";
 
 interface TradingDecision {
     action: "place_order" | "cancel_order" | "no_action";
@@ -32,6 +33,7 @@ interface AnalysisState extends State {
     openOrders?: string;
     openPositions?: string;
     marketMetrics?: any;
+    currentBalance?: any;
     technicalAnalysis?: any;
     lastMessage?: string;
     orderRequestObj?: {
@@ -54,8 +56,7 @@ Open Orders:
 Current Positions:
 {{openPositions}}
 
-Market Metrics (BBO):
-{{marketMetrics}}
+{{currentBalance}}
 
 Technical Analysis:
 {{technicalAnalysis}}
@@ -201,9 +202,17 @@ export const actOnParadexAction: Action = {
             );
             state.openPositions = positionsData;
 
+            // Get current balance
+            const currentBalance = await paradexBalanceProvider.get(
+                runtime,
+                message,
+                state
+            );
+            state.currentBalance = currentBalance;
+
             // Get market metrics (BBO)
-            const bboData = await bboProvider.get(runtime, message, state);
-            state.marketMetrics = bboData;
+            // const bboData = await bboProvider.get(runtime, message, state);
+            // state.marketMetrics = bboData;
 
             // Get technical analysis
             const analysisData = await analysisParadexProvider.get(
