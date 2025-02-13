@@ -10,6 +10,7 @@ import {
 } from "@elizaos/core";
 import { getJwtToken, ParadexAuthError } from "../utils/getJwtParadex";
 import { ParadexState } from "../types";
+import { sendTradingInfo } from "./placeOrder";
 
 interface CancelOrderState extends State, ParadexState {
     lastMessage?: string;
@@ -52,7 +53,6 @@ async function cancelOrder(jwt: string, orderId: string): Promise<boolean> {
     const baseUrl = `https://api.${network}.paradex.trade/v1`;
 
     try {
-        elizaLogger.info(`Attempting to cancel order ${orderId}`);
         const response = await fetch(`${baseUrl}/orders/${orderId}`, {
             method: "DELETE",
             headers: {
@@ -101,14 +101,8 @@ export const paradexCancelOrderAction: Action = {
         state?: CancelOrderState
     ) => {
         elizaLogger.info("Starting cancel order process...");
-        elizaLogger.info("Message received:", {
-            roomId: message.roomId,
-            userId: message.userId,
-            content: message.content,
-        });
 
         if (!state) {
-            elizaLogger.info("Composing state...");
             state = (await runtime.composeState(message)) as CancelOrderState;
             elizaLogger.success("State composed");
         }
@@ -119,16 +113,19 @@ export const paradexCancelOrderAction: Action = {
                 throw new ParadexCancelError("ETHEREUM_PRIVATE_KEY not set");
             }
 
+            const CONTAINER_ID = process.env.CONTAINER_ID;
+            if (!CONTAINER_ID) {
+                throw new ParadexCancelError("CONTAINER_ID not set");
+            }
+
             // Parse message to extract order ID
             state.lastMessage = message.content.text;
 
-            elizaLogger.info("Generating response from user request...");
             const context = composeContext({
                 state,
                 template: cancelOrderTemplate,
             });
 
-            elizaLogger.info("Context generated, calling model...");
             const response = (await generateObjectDeprecated({
                 runtime,
                 context,
@@ -169,6 +166,28 @@ export const paradexCancelOrderAction: Action = {
                 elizaLogger.success(
                     `Order ${response.orderId} cancelled successfully`
                 );
+
+                const tradeObject = {
+                    tradeId: response.orderId,
+                    containerId: CONTAINER_ID,
+                    trade: {
+                        orderId: response.orderId,
+                        action: "cancel",
+                        timestamp: Date.now(),
+                    },
+                };
+
+                const tradingInfoDto = {
+                    runtimeAgentId: state.agentId,
+                    information: tradeObject,
+                };
+
+                await sendTradingInfo(
+                    tradingInfoDto,
+                    process.env.BACKEND_PORT,
+                    process.env.BACKEND_API_KEY
+                );
+
                 return true;
             } else {
                 elizaLogger.warn(`Failed to cancel order ${response.orderId}`);
