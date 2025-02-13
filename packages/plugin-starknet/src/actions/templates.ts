@@ -22,7 +22,6 @@ Based on the market data, wallet information, and your trading history, decide i
 1. Review your last trades to avoid oscillating behavior
 2. If you recently sold Token A for Token B, wait at least 10 minutes before considering the reverse trade
 3. Each trade must be justified by new market conditions, not just price
-4. Consider fees
 
 ### 🏦 MINIMUM BALANCE REQUIREMENTS:
 - Keep at least 0.0016 ETH (1600000000000000 wei) for gas fees
