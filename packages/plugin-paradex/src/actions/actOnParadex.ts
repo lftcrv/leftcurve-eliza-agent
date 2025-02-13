@@ -3,10 +3,10 @@ import {
     IAgentRuntime,
     Memory,
     State,
-    generateObjectDeprecated,
     ModelClass,
     composeContext,
     elizaLogger,
+    generateText,
 } from "@elizaos/core";
 import { openOrdersProvider } from "../providers/fetchOpenOrders";
 import { openPositionsProvider } from "../providers/fetchOpenPositions";
@@ -26,7 +26,6 @@ interface TradingDecision {
         // For cancel_order
         orderId?: string;
     };
-    // reasoning: string;
 }
 
 interface AnalysisState extends State {
@@ -42,6 +41,9 @@ interface AnalysisState extends State {
         price?: number;
     };
 }
+
+// Constants and utilities
+const VALID_ACTIONS = ["place_order", "cancel_order", "no_action"] as const;
 
 const decisionTemplate = `
 Analyze the following market data to make a trading decision:
@@ -72,21 +74,25 @@ Respond ONLY with a JSON object containing ONLY the decision details, without an
     "side": "buy",
     "size": 0.1,
     "price": 50000  // Optional, omit for market orders
-  },
+  }
 }
-
 
 Or for cancelling an order:
 {
   "action": "cancel_order",
   "params": {
     "orderId": "123456789"
-  },
+  }
 }
-`;
+
+Or for no action:
+{
+  "action": "no_action"
+}`;
 
 const cleanJsonResponse = (rawResponse: string): string => {
     let cleanedStr = rawResponse.replace(/```json\n?([\s\S]*?)\n?```/g, "$1");
+    cleanedStr = cleanedStr.replace(/```\n?([\s\S]*?)\n?```/g, "$1");
     cleanedStr = cleanedStr.replace(/[\u0000-\u001F\u007F-\u009F]/g, "");
     cleanedStr = cleanedStr.replace(/^\uFEFF/, "");
     cleanedStr = cleanedStr.trim();
@@ -98,6 +104,58 @@ const cleanJsonResponse = (rawResponse: string): string => {
         .replace(/\s+/g, " "); // Normalize spaces
 
     return cleanedStr;
+};
+
+const validatePlaceOrderParams = (params: any): boolean => {
+    return (
+        params &&
+        typeof params.market === "string" &&
+        ["buy", "sell"].includes(params.side) &&
+        typeof params.size === "number" &&
+        params.size > 0 &&
+        (params.price === undefined ||
+            (typeof params.price === "number" && params.price > 0))
+    );
+};
+
+const validateCancelOrderParams = (params: any): boolean => {
+    return (
+        params &&
+        typeof params.orderId === "string" &&
+        params.orderId.length > 0
+    );
+};
+
+const parseTradingDecision = (jsonString: string): TradingDecision => {
+    const parsedResponse = JSON.parse(jsonString);
+
+    if (!parsedResponse || !VALID_ACTIONS.includes(parsedResponse.action)) {
+        throw new Error(`Invalid action: ${parsedResponse?.action}`);
+    }
+
+    const decision: TradingDecision = {
+        action: parsedResponse.action,
+        params: parsedResponse.params,
+    };
+
+    // Validate params based on action
+    if (decision.action === "place_order") {
+        if (!validatePlaceOrderParams(decision.params)) {
+            throw new Error(
+                `Invalid place_order params: ${JSON.stringify(decision.params)}`
+            );
+        }
+    } else if (decision.action === "cancel_order") {
+        if (!validateCancelOrderParams(decision.params)) {
+            throw new Error(
+                `Invalid cancel_order params: ${JSON.stringify(
+                    decision.params
+                )}`
+            );
+        }
+    }
+
+    return decision;
 };
 
 export const actOnParadexAction: Action = {
@@ -163,88 +221,66 @@ export const actOnParadexAction: Action = {
                 template: decisionTemplate,
             });
 
-            // Get the raw response from the model
-            const rawResponse = await generateObjectDeprecated({
+            const rawResponse = await generateText({
                 runtime,
                 context,
-                modelClass: ModelClass.SMALL,
+                modelClass: ModelClass.LARGE,
             });
 
-            // Même si le parsing échoue, on peut avoir une réponse utilisable
-            let decision;
+
+            let decision: TradingDecision;
             try {
-                if (typeof rawResponse === "string") {
-                    const cleanedStr = cleanJsonResponse(rawResponse);
-                    decision = JSON.parse(cleanedStr);
-                } else {
-                    // Si rawResponse est déjà un objet, on l'utilise directement
-                    decision = {
-                        action: rawResponse.action,
-                        params: {
-                            market: rawResponse.market || "BTC-USD-PERP",
-                            side: rawResponse.side,
-                            size: parseFloat(rawResponse.size),
-                            price: parseFloat(rawResponse.price),
-                        },
-                    };
-                }
-            } catch (parseError) {
-                elizaLogger.warn(
-                    "Error parsing decision, but continuing with raw response:",
-                    parseError
+                const cleanedStr = cleanJsonResponse(rawResponse);
+                decision = parseTradingDecision(cleanedStr);
+                elizaLogger.info(
+                    "Trading decision parsed successfully:",
+                    decision
                 );
-                // On utilise rawResponse même si le parsing a échoué
-                decision = {
-                    action: rawResponse.action,
-                    params: {
-                        market: rawResponse.market || "BTC-USD-PERP",
-                        side: rawResponse.side,
-                        size: parseFloat(rawResponse.size),
-                        price: parseFloat(rawResponse.price),
-                    },
-                };
+            } catch (parseError) {
+                elizaLogger.warn("Error parsing trading decision:", parseError);
+                return false;
             }
 
-            elizaLogger.info("Trading decision generated:", decision);
-
             // Execute the decided action
-            if (
-                decision.action === "place_order" &&
-                (decision.params || rawResponse)
-            ) {
-                elizaLogger.info("Executing place order action...");
+            switch (decision.action) {
+                case "place_order": {
+                    elizaLogger.info("Executing place order action...");
+                    if (!state) {
+                        state = {} as AnalysisState;
+                    }
 
-                if (!state) {
-                    state = {} as AnalysisState;
+                    const params = decision.params!;
+                    state.orderRequestObj = {
+                        action: params.side === "buy" ? "long" : "short",
+                        market: params.market!,
+                        size: params.size!,
+                        price: params.price,
+                    };
+
+                    return await paradexPlaceOrderAction.handler(
+                        runtime,
+                        message,
+                        state
+                    );
                 }
 
-                // Use decision.params if available, otherwise use rawResponse
-                const params = decision.params || {
-                    market: rawResponse.market || "BTC-USD-PERP",
-                    side: rawResponse.side,
-                    size: parseFloat(rawResponse.size),
-                    price: parseFloat(rawResponse.price),
-                };
+                case "cancel_order": {
+                    elizaLogger.info("Executing cancel order action...");
+                    message.content.text = `Cancel order ${
+                        decision.params!.orderId
+                    }`;
 
-                elizaLogger.info("Using params:", params);
+                    return await paradexCancelOrderAction.handler(
+                        runtime,
+                        message,
+                        state
+                    );
+                }
 
-                state.orderRequestObj = {
-                    action: params.side === "buy" ? "long" : "short",
-                    market: params.market,
-                    size: params.size,
-                    price: params.price,
-                };
-
-                const success = await paradexPlaceOrderAction.handler(
-                    runtime,
-                    message,
-                    state
-                );
-                return success;
-            } else {
-                // TODO: should send into tradeInfo
-                elizaLogger.info("No action needed at this time");
-                return true;
+                case "no_action": {
+                    elizaLogger.info("No action needed at this time");
+                    return true;
+                }
             }
         } catch (error) {
             console.log("Error in ACT_ON_PARADEX:", error);

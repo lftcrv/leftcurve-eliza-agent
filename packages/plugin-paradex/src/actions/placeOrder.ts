@@ -158,13 +158,6 @@ function convertToOrderParams(request: OrderRequest): OrderParams {
         ? roundToMultiple(request.price, 0.1)   // TODO
         : undefined;
 
-    elizaLogger.info("Converting order params:", {
-        originalSize: request.size,
-        roundedSize: size,
-        originalPrice: request.price,
-        roundedPrice: price,
-    });
-
     return {
         market: standardizeMarket(request.market),
         side,
@@ -300,7 +293,6 @@ export const paradexPlaceOrderAction: Action = {
 
             elizaLogger.info("Context generated, calling model...");
             const request = state.orderRequestObj;
-            console.log("request:", request);
 
             if (
                 !request ||
@@ -357,11 +349,11 @@ export const paradexPlaceOrderAction: Action = {
             };
 
             // Send trading info to backend
-            // await sendTradingInfo(
-            //     tradingInfoDto,
-            //     process.env.BACKEND_PORT,
-            //     process.env.BACKEND_API_KEY
-            // );
+            await sendTradingInfo(
+                tradingInfoDto,
+                process.env.BACKEND_PORT,
+                process.env.BACKEND_API_KEY
+            );
 
             return true;
         } catch (error) {
