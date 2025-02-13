@@ -10,6 +10,7 @@ import {
 } from "@elizaos/core";
 import { getJwtToken, ParadexAuthError } from "../utils/getJwtParadex";
 import { ParadexState } from "../types";
+import { sendTradingInfo } from "./placeOrder";
 
 interface CancelOrderState extends State, ParadexState {
     lastMessage?: string;
@@ -119,6 +120,11 @@ export const paradexCancelOrderAction: Action = {
                 throw new ParadexCancelError("ETHEREUM_PRIVATE_KEY not set");
             }
 
+            const CONTAINER_ID = process.env.CONTAINER_ID;
+            if (!CONTAINER_ID) {
+                throw new ParadexCancelError("CONTAINER_ID not set");
+            }
+
             // Parse message to extract order ID
             state.lastMessage = message.content.text;
 
@@ -169,6 +175,28 @@ export const paradexCancelOrderAction: Action = {
                 elizaLogger.success(
                     `Order ${response.orderId} cancelled successfully`
                 );
+
+                const tradeObject = {
+                    tradeId: response.orderId,
+                    containerId: CONTAINER_ID,
+                    trade: {
+                        orderId: response.orderId,
+                        action: "cancel",
+                        timestamp: Date.now(),
+                    },
+                };
+
+                const tradingInfoDto = {
+                    runtimeAgentId: state.agentId,
+                    information: tradeObject,
+                };
+
+                await sendTradingInfo(
+                    tradingInfoDto,
+                    process.env.BACKEND_PORT,
+                    process.env.BACKEND_API_KEY
+                );
+
                 return true;
             } else {
                 elizaLogger.warn(`Failed to cancel order ${response.orderId}`);
