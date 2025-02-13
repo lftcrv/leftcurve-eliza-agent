@@ -44,15 +44,20 @@ interface OrderRequest {
     market: string;
     size: number;
     price?: number; // Optional - if present, becomes a limit order
+    explanation: string;
 }
 
-export const sendTradingInfo = async (tradingInfoDto, backendPort, apiKey) => { // TODO: duplicated code from plugin-starknet. Refacto code
+export const sendTradingInfo = async (tradingInfoDto, backendPort, apiKey) => {
+    // TODO: duplicated code from plugin-starknet. Refacto code
     try {
         const isLocal = process.env.LOCAL_DEVELOPMENT === "TRUE";
         const host = isLocal ? "localhost" : "host.docker.internal";
-        
-        elizaLogger.info("Sending trading info to:", `http://${host}:${backendPort}/api/trading-information`);
-        
+
+        elizaLogger.info(
+            "Sending trading info to:",
+            `http://${host}:${backendPort}/api/trading-information`
+        );
+
         const response = await fetch(
             `http://${host}:${backendPort}/api/trading-information`,
             {
@@ -66,14 +71,16 @@ export const sendTradingInfo = async (tradingInfoDto, backendPort, apiKey) => { 
         );
 
         if (!response.ok) {
-            throw new Error(`Failed to save trading info: ${response.status} ${response.statusText}`);
+            throw new Error(
+                `Failed to save trading info: ${response.status} ${response.statusText}`
+            );
         }
 
         elizaLogger.info("Trading information saved successfully");
         const data = await response.json();
         elizaLogger.info("Response data:", data);
-        
     } catch (error) {
+        console.log("error:", error);
         elizaLogger.error(
             "Error saving trading information:",
             error.response?.data || error.message
@@ -81,7 +88,7 @@ export const sendTradingInfo = async (tradingInfoDto, backendPort, apiKey) => { 
     }
 };
 
-const orderTemplate = `Available markets: {{marketsInfo}}
+const orderTemplate = `{{{bio}}}
 
 Analyze ONLY the latest user message to extract order details.
 Last message: "{{lastMessage}}"
@@ -91,6 +98,7 @@ Rules:
 2. If only the crypto name is given (e.g., "ETH" or "BTC"), append "-USD-PERP"
 3. Size must be a number
 4. Price is optional - if specified, creates a limit order
+5. You are roleplaying as a trading expert sharing your personal thoughts and analysis. ALWAYS include an explanation on that specific trade focused on market analysis
 
 Examples of valid messages and their parsing:
 - "Long 0.1 ETH" → market: "ETH-USD-PERP"
@@ -103,7 +111,8 @@ Respond with a JSON markdown block containing ONLY the order details:
 {
   "action": "long",
   "market": "ETH-USD-PERP",  // Must always be CRYPTO-USD-PERP format
-  "size": 0.1
+  "size": 0.1,
+  "explanation": "[Write an explanation that matches my personality]",
 }
 \`\`\`
 
@@ -113,7 +122,8 @@ Or for a limit order:
   "action": "short",
   "market": "BTC-USD-PERP",  // Must always be CRYPTO-USD-PERP format
   "size": 0.5,
-  "price": 96000
+  "price": 96000,
+  "explanation": "[Write an explanation that matches my personality]",
 }
 \`\`\``;
 
@@ -268,6 +278,8 @@ export const paradexPlaceOrderAction: Action = {
             if (!ethPrivateKey) {
                 throw new ParadexOrderError("ETHEREUM_PRIVATE_KEY not set");
             }
+            const CONTAINER_ID = process.env.CONTAINER_ID;
+            if (!CONTAINER_ID) throw new ParadexOrderError("CONTAINER_ID not set");
 
             state.lastMessage = message.content.text;
 
@@ -310,17 +322,22 @@ export const paradexPlaceOrderAction: Action = {
             elizaLogger.success("Order placed successfully:", result);
 
             const tradeObject = {
-                tradeId: result.order?.id || result.transaction_hash || Date.now().toString(),
+                tradeId:
+                    result.order?.id ||
+                    result.transaction_hash ||
+                    Date.now().toString(),
                 containerId: CONTAINER_ID,
                 trade: {
                     market: orderParams.market,
                     side: orderParams.side,
                     type: orderParams.type,
                     size: orderParams.size.toString(),
-                    price: orderParams.price ? orderParams.price.toString() : undefined,
+                    price: orderParams.price
+                        ? orderParams.price.toString()
+                        : undefined,
                     clientId: orderParams.clientId,
-                    explanation: `${request.action.toUpperCase()} order placed for ${orderParams.market}`,
-                }
+                    explanation: request.explanation,
+                },
             };
 
             // Create the DTO
