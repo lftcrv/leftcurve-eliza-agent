@@ -50,8 +50,13 @@ export const MultipleTokenPriceFeeds = async (): Promise<string> => {
 
 export const sendTradingInfo = async (tradingInfoDto, backendPort, apiKey) => {
     try {
+        const isLocal = process.env.LOCAL_DEVELOPMENT === "TRUE";
+        const host = isLocal ? "localhost" : "host.docker.internal";
+        
+        elizaLogger.info("Sending trading info to:", `http://${host}:${backendPort}/api/trading-information`);
+        
         const response = await fetch(
-            `http://host.docker.internal:${backendPort}/api/trading-information`,
+            `http://${host}:${backendPort}/api/trading-information`,
             {
                 method: "POST",
                 headers: {
@@ -61,9 +66,17 @@ export const sendTradingInfo = async (tradingInfoDto, backendPort, apiKey) => {
                 body: JSON.stringify(tradingInfoDto),
             }
         );
-        elizaLogger.log("Trading information saved");
+
+        if (!response.ok) {
+            throw new Error(`Failed to save trading info: ${response.status} ${response.statusText}`);
+        }
+
+        elizaLogger.info("Trading information saved successfully");
+        const data = await response.json();
+        elizaLogger.info("Response data:", data);
+        
     } catch (error) {
-        console.error(
+        elizaLogger.error(
             "Error saving trading information:",
             error.response?.data || error.message
         );
