@@ -49,8 +49,6 @@ async function fetchPositions(jwt: string): Promise<PositionResponse> {
     const baseUrl = getParadexUrl();
     const url = `${baseUrl}/positions`;
 
-    elizaLogger.info("Fetching positions from URL:", url);
-
     try {
         const response = await fetch(url, {
             headers: {
@@ -95,8 +93,6 @@ export const openPositionsProvider: Provider = {
         message: Memory,
         state?: State & ParadexState
     ) => {
-        elizaLogger.info("Starting positionsProvider.get...");
-
         try {
             const ethPrivateKey = process.env.ETHEREUM_PRIVATE_KEY;
             if (!ethPrivateKey) {
@@ -109,8 +105,6 @@ export const openPositionsProvider: Provider = {
                 throw new ParadexAuthError("Failed to get JWT token");
             }
 
-            elizaLogger.info("Successfully obtained JWT token");
-
             if (state) {
                 state.jwtToken = authResult.jwt_token;
                 state.jwtExpiry = authResult.expiry;
@@ -120,7 +114,6 @@ export const openPositionsProvider: Provider = {
             const positionsData = await fetchPositions(authResult.jwt_token);
 
             if (!positionsData.results || positionsData.results.length === 0) {
-                elizaLogger.info("No open positions found");
                 return "No open positions found.";
             }
 
@@ -152,7 +145,6 @@ export const openPositionsProvider: Provider = {
                         `Leverage: ${leverage}x | Liq. Price: ${liqPrice}`,
                     ].join(" | ");
 
-                    elizaLogger.info("Formatted position:", formatted);
                     return formatted;
                 });
 
@@ -163,7 +155,6 @@ export const openPositionsProvider: Provider = {
             const finalResponse = `Current Open Positions:\n${formattedPositions.join(
                 "\n"
             )}`;
-            elizaLogger.info("Returning formatted positions:", finalResponse);
             return finalResponse;
         } catch (error) {
             elizaLogger.error("Positions Provider error:", error);

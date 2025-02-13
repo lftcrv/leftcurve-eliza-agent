@@ -277,7 +277,6 @@ export const paradexPlaceOrderAction: Action = {
     ) => {
         elizaLogger.info("Starting order placement...");
         if (!state) {
-            elizaLogger.info("Composing state...");
             state = (await runtime.composeState(message)) as PlaceOrderState;
             elizaLogger.success("State composed");
         }
