@@ -1,113 +1,116 @@
-export interface Analysis {
-    lastPrice: number;
-    changes: Record<string, string>;
-    keySignals: {
-        shortTerm: {
-            timeframe: string;
-            patterns: {
-                recent: Array<{
-                    type: string;
-                    strength: number;
-                }>;
+export interface AssetAnalysis {
+    social: null;
+    assetId: string;
+    metadata: {
+        platform: string;
+        dataSource: string;
+        generatedAt: string;
+        processingTimeMs: number;
+    };
+    technical: {
+        changes: Record<string, string>;
+        lastPrice: number;
+        keySignals: {
+            longTerm: {
+                support: number;
+                timeframe: string;
+                resistance: number;
             };
-            momentum: {
-                rsi: {
-                    value: number;
-                    condition: string;
-                };
-                macd: {
-                    signal: string;
-                    strength: number;
-                };
-                stochastic: {
-                    k: number;
-                    d: number;
-                    condition: string;
-                };
-            };
-        };
-        mediumTerm: {
-            timeframe: string;
-            trend: {
-                primary: {
-                    direction: string;
-                    strength: number;
-                    momentum: {
+            shortTerm: {
+                momentum: {
+                    rsi: {
                         value: number;
-                        period: number;
-                        sustainedPeriods: number;
+                        condition: string;
+                    };
+                    macd: {
+                        signal: string;
+                        strength: number;
+                    };
+                    stochastic: {
+                        d: number;
+                        k: number;
+                        condition: string;
                     };
                 };
-                price: {
-                    action: {
-                        direction: string;
+                patterns: {
+                    recent: Array<{
+                        type: string;
                         strength: number;
-                        testedLevels: {
-                            recent: number;
-                            count: number;
+                    }>;
+                };
+                timeframe: string;
+            };
+            mediumTerm: {
+                trend: {
+                    price: {
+                        action: {
+                            strength: number;
+                            direction: string;
+                            testedLevels: {
+                                count: number;
+                                recent: number;
+                            };
+                        };
+                        volatility: {
+                            state: string;
+                            bbWidth: number;
                         };
                     };
-                    volatility: {
-                        bbWidth: number;
-                        state: string;
+                    primary: {
+                        momentum: {
+                            value: number;
+                            period: number;
+                            sustainedPeriods: number;
+                        };
+                        strength: number;
+                        direction: string;
                     };
                 };
-            };
-            technicals: {
-                momentum: {
-                    roc: {
-                        value: number;
-                        state: string;
-                        period: number;
+                timeframe: string;
+                technicals: {
+                    levels: {
+                        pivots: {
+                            r1: number;
+                            s1: number;
+                            pivot: number;
+                            breakout: string;
+                            r1Distance: number;
+                        };
                     };
-                    adx: {
-                        value: number;
-                        trending: boolean;
-                        sustainedPeriods: number;
+                    volume: {
+                        trend: string;
+                        profile: {
+                            activity: number;
+                            distribution: string;
+                            sustainedPeriods: number;
+                        };
+                        significance: number;
                     };
-                };
-                ichimoku: {
-                    signal: string;
-                    cloudState: string;
-                    lines: {
-                        conversion: number;
-                        base: number;
-                        priceDistance: number;
+                    ichimoku: {
+                        lines: {
+                            base: number;
+                            conversion: number;
+                            priceDistance: number;
+                        };
+                        signal: string;
+                        cloudState: string;
                     };
-                };
-                levels: {
-                    pivots: {
-                        pivot: number;
-                        r1: number;
-                        s1: number;
-                        breakout: string;
-                        r1Distance: number;
-                    };
-                };
-                volume: {
-                    trend: string;
-                    significance: number;
-                    profile: {
-                        distribution: string;
-                        activity: number;
-                        sustainedPeriods: number;
+                    momentum: {
+                        adx: {
+                            value: number;
+                            trending: boolean;
+                            sustainedPeriods: number;
+                        };
+                        roc: {
+                            state: string;
+                            value: number;
+                            period: number;
+                        };
                     };
                 };
             };
         };
-        longTerm: {
-            timeframe: string;
-            support: number;
-            resistance: number;
-        };
+        volatility: number;
     };
-    volatility: number;
-}
-
-export interface TechnicalAnalysis {
-    status: string;
-    data: {
-        timestamp: number;
-        analyses: Record<string, Analysis>;
-    };
+    timestamp: number;
 }

@@ -1,5 +1,6 @@
 import { num } from "starknet";
 import type { HolderData } from "../types/trustDB";
+import { AssetAnalysis } from "./types";
 
 export interface TokenMetrics {
     liquidityUsd: bigint;
@@ -131,3 +132,43 @@ export function analyzeHighSupplyHolders(
         };
     }
 }
+
+
+const AVNU_ASSETS = [
+    'BROTHER', 'STRK'
+    //, 'LORDS', 'USDC', 'WSTETH',
+    //'WBTC', 'UNI', 'RETH', 'XSTRK', 'NSTR',
+    //'ZEND', 'SWAY', 'SSTR'
+];
+
+export const fetchAvnuLatestAnalysis = async (assets: string[] = AVNU_ASSETS): Promise<AssetAnalysis[]> => {
+    const assetsParam = assets.join(',');
+    const response = await fetch(
+        `http://127.0.0.1:8080/analysis/latest?assets=${assetsParam}&platform=avnu`,
+        {
+            headers: {
+                'accept': '*/*',
+                'x-api-key': 'your-secret-api-key'
+            }
+        }
+    );
+    
+    if (!response.ok) throw new Error(`HTTP Error: ${response.status}`);
+    return response.json();
+};
+
+export const fetchParadexLatestAnalysis = async (assets: string[] = ['BTC', 'ETH']): Promise<AssetAnalysis[]> => {
+    const assetsParam = assets.join(',');
+    const response = await fetch(
+        `http://127.0.0.1:8080/analysis/latest?assets=${assetsParam}&platform=paradex`,
+        {
+            headers: {
+                'accept': '*/*',
+                'x-api-key': 'your-secret-api-key'
+            }
+        }
+    );
+    
+    if (!response.ok) throw new Error(`HTTP Error: ${response.status}`);
+    return response.json();
+};
