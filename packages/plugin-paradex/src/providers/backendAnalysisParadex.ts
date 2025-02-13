@@ -128,7 +128,7 @@ export const analysisParadexProvider: Provider = {
 
             const host = isLocal ? "localhost" : "host.docker.internal";
 
-            const assetsQuery = "BTC,ETH";
+            const assetsQuery = "BTC";
 
             try {
                 const response = await fetch(
@@ -150,16 +150,16 @@ export const analysisParadexProvider: Provider = {
 
                 const data = await response.json();
 
-                if (!data.successful || data.successful.length === 0) {
+                if (!Array.isArray(data) || data.length === 0) {
                     return "No analysis data available for the requested assets.";
-                }
+                  }
 
                 if (state) {
-                    state.technicalAnalysis = data.successful;
+                    state.technicalAnalysis = data;
                     state.lastAnalysisTimestamp = Date.now();
                 }
 
-                return JSON.stringify(data.successful, null, 2);
+                return JSON.stringify(data, null, 2);
             } catch (error) {
                 elizaLogger.error("Error fetching technical analysis:", error);
                 return "Failed to fetch technical analysis data. Please try again later.";
