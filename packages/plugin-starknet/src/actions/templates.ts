@@ -83,5 +83,4 @@ NO MARKDOWN, NO BACKTICKS, JUST THE JSON OBJECT.
 2. Verify you're using exact wei values
 3. Ensure minimum balances are maintained
 4. Confirm token names match exactly
-5. If the last trade involve either of the tokens you want to trade? If yes, MUST return no
 `;
