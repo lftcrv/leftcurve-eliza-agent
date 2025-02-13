@@ -111,7 +111,7 @@ export const tradeAction: Action = {
             state = await runtime.updateRecentMessageState(state);
         }
 
-        const CONTAINER_ID = process.env.CONTAINER_ID ?? "default";
+        const CONTAINER_ID = process.env.CONTAINER_ID;
         const tokenInfos = await MultipleTokenInfos();
         const tokenPrices = await MultipleTokenPriceFeeds();
 

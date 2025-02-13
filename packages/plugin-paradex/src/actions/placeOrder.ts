@@ -46,6 +46,41 @@ interface OrderRequest {
     price?: number; // Optional - if present, becomes a limit order
 }
 
+export const sendTradingInfo = async (tradingInfoDto, backendPort, apiKey) => { // TODO: duplicated code from plugin-starknet. Refacto code
+    try {
+        const isLocal = process.env.LOCAL_DEVELOPMENT === "TRUE";
+        const host = isLocal ? "localhost" : "host.docker.internal";
+        
+        elizaLogger.info("Sending trading info to:", `http://${host}:${backendPort}/api/trading-information`);
+        
+        const response = await fetch(
+            `http://${host}:${backendPort}/api/trading-information`,
+            {
+                method: "POST",
+                headers: {
+                    "Content-Type": "application/json",
+                    "x-api-key": apiKey,
+                },
+                body: JSON.stringify(tradingInfoDto),
+            }
+        );
+
+        if (!response.ok) {
+            throw new Error(`Failed to save trading info: ${response.status} ${response.statusText}`);
+        }
+
+        elizaLogger.info("Trading information saved successfully");
+        const data = await response.json();
+        elizaLogger.info("Response data:", data);
+        
+    } catch (error) {
+        elizaLogger.error(
+            "Error saving trading information:",
+            error.response?.data || error.message
+        );
+    }
+};
+
 const orderTemplate = `Available markets: {{marketsInfo}}
 
 Analyze ONLY the latest user message to extract order details.
@@ -273,6 +308,34 @@ export const paradexPlaceOrderAction: Action = {
 
             state.lastOrderResult = result;
             elizaLogger.success("Order placed successfully:", result);
+
+            const tradeObject = {
+                tradeId: result.order?.id || result.transaction_hash || Date.now().toString(),
+                containerId: CONTAINER_ID,
+                trade: {
+                    market: orderParams.market,
+                    side: orderParams.side,
+                    type: orderParams.type,
+                    size: orderParams.size.toString(),
+                    price: orderParams.price ? orderParams.price.toString() : undefined,
+                    clientId: orderParams.clientId,
+                    explanation: `${request.action.toUpperCase()} order placed for ${orderParams.market}`,
+                }
+            };
+
+            // Create the DTO
+            const tradingInfoDto = {
+                runtimeAgentId: state.agentId,
+                information: tradeObject,
+            };
+
+            // Send trading info to backend
+            await sendTradingInfo(
+                tradingInfoDto,
+                process.env.BACKEND_PORT,
+                process.env.BACKEND_API_KEY
+            );
+
             return true;
         } catch (error) {
             elizaLogger.error("Order placement error:", error);
