@@ -1,10 +1,11 @@
 {
-    "name": "Dobby",
+    "name": "dobby",
     "clients": [],
-    "modelProvider": "openai",
+    "modelProvider": "anthropic",
     "settings": {
+        "secrets": {},
         "voice": {
-            "model": "en_GB-danny-low"
+            "model": "en_US-male-medium"
         }
     },
     "plugins": [],

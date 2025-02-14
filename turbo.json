@@ -14,23 +14,12 @@
             "outputs": ["dist/**"],
             "dependsOn": ["^@elizaos/core#build"]
         },
-        "@elizaos/client-direct#build": {
-            "outputs": ["dist/**"],
-            "dependsOn": [
-                "@elizaos/plugin-image-generation#build",
-                "@elizaos/plugin-tee-log#build"
-            ]
-        },
         "@elizaos/plugin-solana#build": {
             "outputs": ["dist/**"],
             "dependsOn": [
                 "@elizaos/plugin-trustdb#build",
                 "@elizaos/plugin-tee#build"
             ]
-        },
-        "@elizaos/plugin-nft-generation#build": {
-            "outputs": ["dist/**"],
-            "dependsOn": ["@elizaos/plugin-node#build"]
         },
         "@elizaos/client-direct#build": {
             "outputs": ["dist/**"],
