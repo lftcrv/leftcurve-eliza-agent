@@ -51,7 +51,7 @@ export const MultipleTokenPriceFeeds = async (): Promise<string> => {
 export const sendTradingInfo = async (tradingInfoDto, backendPort, apiKey) => {
     try {
         const isLocal = process.env.LOCAL_DEVELOPMENT === "TRUE";
-        const host = isLocal ? "localhost" : "host.docker.internal";
+        const host = isLocal ? "localhost" : "172.17.0.1";    // todo put in env var
 
         elizaLogger.info(
             "Sending trading info to:",

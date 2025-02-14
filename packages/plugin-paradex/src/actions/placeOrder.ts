@@ -56,7 +56,7 @@ export const sendTradingInfo = async (tradingInfoDto, backendPort, apiKey) => {
     // TODO: duplicated code from plugin-starknet. Refacto code
     try {
         const isLocal = process.env.LOCAL_DEVELOPMENT === "TRUE";
-        const host = isLocal ? "localhost" : "host.docker.internal";
+        const host = isLocal ? "localhost" : "172.17.0.1";
 
         elizaLogger.info(
             "Sending trading info to:",

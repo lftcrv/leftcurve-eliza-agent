@@ -126,7 +126,7 @@ export const analysisParadexProvider: Provider = {
                 return "Unable to fetch analysis - missing API key.";
             }
 
-            const host = isLocal ? "localhost" : "host.docker.internal";
+            const host = isLocal ? "localhost" : "172.17.0.1";
 
             const assetsQuery = "BTC";
 
