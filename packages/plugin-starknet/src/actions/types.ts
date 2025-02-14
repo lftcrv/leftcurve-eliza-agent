@@ -72,3 +72,19 @@ export interface SwapContent {
     buyTokenName: string;
     sellAmount: string;
 }
+
+export interface Trade {
+    sellToken: string;
+    buyToken: string;
+    sellAmount: string;
+    buyAmount: string;
+    timestamp: number;
+}
+
+export const MAX_TRADES_HISTORY = 5;
+
+declare module '@elizaos/core' {
+    interface State {
+        tradeHistory: Trade[];
+    }
+}

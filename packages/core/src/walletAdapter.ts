@@ -96,7 +96,7 @@ export class WalletAdapter implements IWalletAdapter {
         "0x04878d1148318a31829523ee9c6a5ee563af6cd87f90a30809e5b0d27db8a9b",
         "0x0102d5e124c51b936ee87302e0f938165aec96fb6c2027ae7f3a5ed46c77573b"
       ) VALUES (
-        ?, 0, 0, 0, 0, 0, 500000000, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0
+        ?, 0, 0, 2000000000000000000, 0, 0, 500000000, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0
       )
       ON CONFLICT(agentID) DO NOTHING;
       `;
