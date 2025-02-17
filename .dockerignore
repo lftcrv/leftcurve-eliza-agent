@@ -17,3 +17,12 @@ node_modules
 # Ignore build artifacts from the host
 dist
 build
+
+# Documentation
+**/docs
+**/README.md
+i18n/readme
+
+# Cache directories
+.cache
+.turbo
