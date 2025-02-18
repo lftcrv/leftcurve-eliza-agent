@@ -128,7 +128,7 @@ export const analysisParadexProvider: Provider = {
 
             const host = isLocal ? "localhost" : "172.17.0.1";
 
-            const assetsQuery = "BTC";
+            const assetsQuery = "BTC,ETH,STRK,AAVE,AI16Z";
 
             try {
                 const response = await fetch(
@@ -162,10 +162,12 @@ export const analysisParadexProvider: Provider = {
                 return JSON.stringify(data, null, 2);
             } catch (error) {
                 elizaLogger.error("Error fetching technical analysis:", error);
+                console.log("Error fetching technical analysis:", error);
                 return "Failed to fetch technical analysis data. Please try again later.";
             }
         } catch (error) {
             elizaLogger.error("Technical Analysis Provider error:", error);
+            console.log("Technical Analysis Provider error:", error);
             return "Unable to process technical analysis request.";
         }
     },

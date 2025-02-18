@@ -358,8 +358,10 @@ export const paradexPlaceOrderAction: Action = {
             return true;
         } catch (error) {
             elizaLogger.error("Order placement error:", error);
+            console.log("Order placement error:", error)
             if (error instanceof ParadexOrderError) {
                 elizaLogger.error("Details:", error.details);
+                console.log("Details:", error.details);
             }
             return false;
         }
