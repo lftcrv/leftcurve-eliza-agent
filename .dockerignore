@@ -5,6 +5,7 @@ node_modules
 *.log
 *.tmp
 .DS_Store
+agent/logs
 
 # Ignore Git files and metadata
 .gitignore

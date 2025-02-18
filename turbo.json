@@ -50,9 +50,6 @@
             "outputs": ["dist/**"],
             "dependsOn": ["@elizaos/plugin-tee#build"]
         },
-        "eliza-docs#build": {
-            "outputs": ["build/**"]
-        },
         "dev": {
             "persistent": true,
             "cache": false
