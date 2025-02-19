@@ -79,7 +79,6 @@ export const tradeSimulationAction: Action = {
         } else {
             state = await runtime.updateRecentMessageState(state);
         }
-        const CONTAINER_ID = process.env.CONTAINER_ID ?? "default";
 
         const walletBalances = await getSimulatedWalletBalances(runtime);
 
@@ -152,7 +151,6 @@ export const tradeSimulationAction: Action = {
 
                 const tradeObject = {
                     tradeId: Date.now().toString(),
-                    containerId: CONTAINER_ID,
                     trade: {
                         sellTokenName: swap.sellTokenName,
                         sellTokenAddress: sellTokenAddress,
@@ -182,7 +180,6 @@ export const tradeSimulationAction: Action = {
             } else {
                 const noTradeObject = {
                     tradeId: Date.now().toString(),
-                    containerId: CONTAINER_ID,
                     trade: {
                         explanation: parsedDecision.Explanation,
                         noTradeReason: parsedDecision.Explanation,
