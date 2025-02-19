@@ -198,7 +198,6 @@ export const tradeSimulationAction: Action = {
 
                 const tradeObject = {
                     tradeId: Date.now().toString(),
-                    containerId: CONTAINER_ID,
                     trade: {
                         sellTokenName: swap.sellTokenName,
                         sellTokenAddress: sellTokenAddress,
@@ -228,7 +227,6 @@ export const tradeSimulationAction: Action = {
             } else {
                 const noTradeObject = {
                     tradeId: Date.now().toString(),
-                    containerId: CONTAINER_ID,
                     trade: {
                         explanation: parsedDecision.Explanation,
                         noTradeReason: parsedDecision.Explanation,

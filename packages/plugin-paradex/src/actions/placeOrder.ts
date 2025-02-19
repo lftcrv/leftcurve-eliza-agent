@@ -55,8 +55,9 @@ interface OrderRequest {
 export const sendTradingInfo = async (tradingInfoDto, backendPort, apiKey) => {
     // TODO: duplicated code from plugin-starknet. Refacto code
     try {
-        const isLocal = process.env.LOCAL_DEVELOPMENT === "TRUE";
-        const host = isLocal ? "localhost" : "172.17.0.1";
+        // const isLocal = process.env.LOCAL_DEVELOPMENT === "TRUE";
+        // const host = isLocal ? "localhost" : "172.17.0.1";
+        const host = "host.docker.internal";
 
         elizaLogger.info(
             "Sending trading info to:",
@@ -286,10 +287,6 @@ export const paradexPlaceOrderAction: Action = {
             if (!ethPrivateKey) {
                 throw new ParadexOrderError("ETHEREUM_PRIVATE_KEY not set");
             }
-            const CONTAINER_ID = process.env.CONTAINER_ID;
-            if (!CONTAINER_ID)
-                throw new ParadexOrderError("CONTAINER_ID not set");
-
             elizaLogger.info("Context generated, calling model...");
             const request = state.orderRequestObj;
 
@@ -328,7 +325,6 @@ export const paradexPlaceOrderAction: Action = {
                     result.order?.id ||
                     result.transaction_hash ||
                     Date.now().toString(),
-                containerId: CONTAINER_ID,
                 trade: {
                     market: orderParams.market,
                     side: orderParams.side,
@@ -357,8 +353,10 @@ export const paradexPlaceOrderAction: Action = {
             return true;
         } catch (error) {
             elizaLogger.error("Order placement error:", error);
+            console.log("Order placement error:", error)
             if (error instanceof ParadexOrderError) {
                 elizaLogger.error("Details:", error.details);
+                console.log("Details:", error.details);
             }
             return false;
         }

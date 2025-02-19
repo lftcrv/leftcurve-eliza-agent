@@ -119,18 +119,21 @@ export const analysisParadexProvider: Provider = {
 
             const backendPort = process.env.BACKEND_PORT || "3080";
             const apiKey = process.env.BACKEND_API_KEY;
-            const isLocal = process.env.LOCAL_DEVELOPMENT === "TRUE";
+            // const isLocal = process.env.LOCAL_DEVELOPMENT === "TRUE";
+            // const host = isLocal ? "localhost" : "172.17.0.1";
+            const host = "host.docker.internal";
+
 
             if (!apiKey) {
                 elizaLogger.error("Backend API key not set");
                 return "Unable to fetch analysis - missing API key.";
             }
 
-            const host = isLocal ? "localhost" : "172.17.0.1";
 
-            const assetsQuery = "BTC";
+            const assetsQuery = "BTC,ETH,STRK,AAVE,AI16Z";
 
             try {
+                console.log("url",`http://${host}:${backendPort}/analysis/latest?assets=${assetsQuery}&platform=paradex`)
                 const response = await fetch(
                     `http://${host}:${backendPort}/analysis/latest?assets=${assetsQuery}&platform=paradex`,
                     {
@@ -162,10 +165,12 @@ export const analysisParadexProvider: Provider = {
                 return JSON.stringify(data, null, 2);
             } catch (error) {
                 elizaLogger.error("Error fetching technical analysis:", error);
+                console.log("Error fetching technical analysis:", error);
                 return "Failed to fetch technical analysis data. Please try again later.";
             }
         } catch (error) {
             elizaLogger.error("Technical Analysis Provider error:", error);
+            console.log("Technical Analysis Provider error:", error);
             return "Unable to process technical analysis request.";
         }
     },

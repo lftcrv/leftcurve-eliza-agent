@@ -17,7 +17,7 @@ export const paradexPlugin: Plugin = {
     name: "paradex",
     description: "Paradex Plugin for Eliza",
     actions: [paradexFetchAccountInfoAction, paradexPlaceOrderAction, paradexCancelOrderAction, paradexOnboardingAction, actOnParadexAction],
-    providers: [openOrdersProvider, openPositionsProvider],
+    providers: [],
 };
 
 export default paradexPlugin;
