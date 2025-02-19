@@ -110,10 +110,6 @@ export const paradexFetchAccountInfoAction: Action = {
             state.accountBalance = accountInfo.balance;
             state.accountOrders = accountInfo.orders;
 
-            elizaLogger.info("AccountBalance:", accountInfo.balance);
-            elizaLogger.info("accountOrders:", accountInfo.orders);
-            elizaLogger.success("Successfully fetched account information");
-
             return true;
         } catch (error) {
             console.error("Account Info fetch error:", error);

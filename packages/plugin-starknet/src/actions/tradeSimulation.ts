@@ -1,3 +1,4 @@
+import { v4 as uuid } from 'uuid';
 import {
     Action,
     ActionExample,
@@ -13,7 +14,7 @@ import {
 import { fetchQuotes, QuoteRequest } from "@avnu/avnu-sdk";
 import { validateStarknetConfig } from "../environment.ts";
 import { STARKNET_TOKENS } from "../utils/constants.ts";
-import { TradeDecision } from "./types.ts";
+import { TradeDecision, Trade, MAX_TRADES_HISTORY } from "./types.ts";
 import { shouldTradeTemplateInstruction } from "./templates.ts";
 import {
     MultipleTokenInfos,
@@ -49,8 +50,8 @@ export async function getSimulatedWalletBalances(
     }
 }
 
-const tokenInfos = await MultipleTokenInfos();
-const tokenPrices = await MultipleTokenPriceFeeds();
+//const tokenInfos = await MultipleTokenInfos();
+//const tokenPrices = await MultipleTokenPriceFeeds();
 
 export const tradeSimulationAction: Action = {
     name: "SIMULATE_STARKNET_TRADE",
@@ -80,18 +81,34 @@ export const tradeSimulationAction: Action = {
             state = await runtime.updateRecentMessageState(state);
         }
 
+        const tradeMemories = await runtime.knowledgeManager.getMemories({
+            roomId: state.roomId,
+            count: 1
+        });
+
+        let tradeHistory: Trade[] = [];
+        if (tradeMemories && tradeMemories.length > 0) {
+            const lastMemory = tradeMemories[0];
+            if (lastMemory.content && typeof lastMemory.content === 'object' && 'data' in lastMemory.content) {
+                tradeHistory = lastMemory.content.data as Trade[];
+            }
+        }
+        const CONTAINER_ID = process.env.CONTAINER_ID ?? "default";
+
         const walletBalances = await getSimulatedWalletBalances(runtime);
 
         const shouldTradeTemplate =
-            shouldTradeTemplateInstruction +
-            "\n\n And \n\n" +
-            tokenInfos +
-            "\n\n And \n\n" +
-            tokenPrices +
-            `{{{providers}}}` +
-            "\n\n And here is your wallet's balances : \n\n" +
-            `${walletBalances}`;
+        shouldTradeTemplateInstruction +
+        "\n\n And here is your wallet's balances : \n\n" +
+        `${walletBalances}` +
+        "\n\n And here are your last trades : \n\n" +
+        `${tradeHistory.length > 0 ? 
+                tradeHistory.map(trade => 
+                    `- ${new Date(trade.timestamp).toLocaleString()}: Sold ${trade.sellAmount.toString()} ${trade.sellToken} for ${trade.buyAmount.toString()} ${trade.buyToken}`
+                ).join('\n') 
+                : 'No trading history yet.'}`;
 
+        console.log(shouldTradeTemplate);
         const shouldTradeContext = composeContext({
             state,
             template: shouldTradeTemplate,
@@ -148,6 +165,36 @@ export const tradeSimulationAction: Action = {
                     buyTokenAddress,
                     Number(bestQuote.buyAmount)
                 );
+
+                const newTrade: Trade = {
+                    sellToken: swap.sellTokenName,
+                    buyToken: swap.buyTokenName,
+                    sellAmount: swap.sellAmount.toString(),
+                    buyAmount: bestQuote.buyAmount.toString(),
+                    timestamp: Date.now()
+                };
+
+                const updatedTradeHistory = [newTrade, ...tradeHistory].slice(0, MAX_TRADES_HISTORY);
+
+                const tradeHistoryText = updatedTradeHistory
+                .map(trade => 
+                    `${new Date(trade.timestamp).toLocaleString()}: Sold ${trade.sellAmount.toString()} ${trade.sellToken} for ${trade.buyAmount.toString()} ${trade.buyToken}`
+                )
+                .join('\n');
+
+                const tradeMemory: Memory = {
+                    id: uuid() as `${string}-${string}-${string}-${string}-${string}`,
+                    userId: state.userId!,
+                    agentId: runtime.agentId,
+                    roomId: state.roomId,
+                    content: {
+                        text: tradeHistoryText,
+                        type: 'trade_history',
+                        data: updatedTradeHistory
+                    }
+                };
+    
+                await runtime.knowledgeManager.createMemory(tradeMemory);
 
                 const tradeObject = {
                     tradeId: Date.now().toString(),

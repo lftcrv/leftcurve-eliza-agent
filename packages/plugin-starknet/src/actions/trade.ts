@@ -1,3 +1,4 @@
+import { v4 as uuid } from 'uuid';
 import {
     Action,
     ActionExample,
@@ -17,7 +18,7 @@ import {
 } from "@avnu/avnu-sdk";
 import { getStarknetAccount } from "../utils/index.ts";
 import { validateStarknetConfig } from "../environment.ts";
-import { TradeDecision } from "./types.ts";
+import { MAX_TRADES_HISTORY, Trade, TradeDecision } from "./types.ts";
 import { STARKNET_TOKENS } from "../utils/constants.ts";
 import { shouldTradeTemplateInstruction } from "./templates.ts";
 import {
@@ -100,78 +101,125 @@ export const tradeAction: Action = {
         await validateStarknetConfig(runtime);
         return true;
     },
-    description:
-        "Perform a token swap on starknet. Use this action when a user asks you to trade.",
+    description: "Perform a token swap on starknet. Use this action when a user asks you to trade.",
     handler: async (
         runtime: IAgentRuntime,
         message: Memory,
         state: State,
-        _options: { [key: string]: unknown },
+        _options: { [key: string]: unknown; },
         callback?: HandlerCallback
     ): Promise<boolean> => {
-        elizaLogger.log("Starting EXECUTE_STARKNET_TRADE handler...");
+        elizaLogger.log("Starting SIMULATE_STARKNET_TRADE handler...");
         if (!state) {
             state = (await runtime.composeState(message)) as State;
         } else {
             state = await runtime.updateRecentMessageState(state);
         }
 
-        const tokenInfos = await MultipleTokenInfos();
-        const tokenPrices = await MultipleTokenPriceFeeds();
+        const tradeMemories = await runtime.knowledgeManager.getMemories({
+            roomId: state.roomId,
+            count: 1
+        });
 
-        const shouldTradeTemplate =
-            shouldTradeTemplateInstruction +
-            "\n\n And \n\n" +
-            tokenInfos +
-            "\n\n And \n\n" +
-            tokenPrices +
-            `{{{providers}}}`;
+        let tradeHistory: Trade[] = [];
+        if (tradeMemories && tradeMemories.length > 0) {
+            const lastMemory = tradeMemories[0];
+            if (lastMemory.content && typeof lastMemory.content === 'object' && 'data' in lastMemory.content) {
+                tradeHistory = lastMemory.content.data as Trade[];
+            }
+        }
+
+        const CONTAINER_ID = process.env.CONTAINER_ID ?? "default";
+
+        const shouldTradeTemplate = shouldTradeTemplateInstruction + "\n\n And here are your last trades : \n\n" +
+            `${tradeHistory.length > 0 ?
+                tradeHistory.map(trade => `- ${new Date(trade.timestamp).toLocaleString()}: Sold ${trade.sellAmount.toString()} ${trade.sellToken} for ${trade.buyAmount.toString()} ${trade.buyToken}`
+                ).join('\n')
+                : 'No trading history yet.'}`;
+
+        console.log(shouldTradeTemplate);
         const shouldTradeContext = composeContext({
             state,
             template: shouldTradeTemplate,
         });
 
-        const response = await generateText({
+        const tradeDecisionResponse = await generateText({
             context: shouldTradeContext,
             modelClass: ModelClass.MEDIUM,
             runtime,
         });
 
-        console.log(response);
-
         try {
-            const parsedDecision: TradeDecision = JSON.parse(response);
-            const swap = parsedDecision.swap;
+            const parsedDecision: TradeDecision = JSON.parse(tradeDecisionResponse);
 
             if (parsedDecision.shouldTrade === "yes") {
+                const swap = parsedDecision.swap;
                 if (!isSwapContent(swap)) {
+                    elizaLogger.warn("invalid swap content");
                     return false;
                 }
-                try {
-                    const sellTokenAddress = STARKNET_TOKENS.find(
-                        (t) => t.name === swap.sellTokenName
-                    ).address;
-                    const buyTokenAddress = STARKNET_TOKENS.find(
-                        (t) => t.name === swap.buyTokenName
-                    ).address;
 
-                    // Get quote for the proposed trade
-                    const quoteParams: QuoteRequest = {
-                        sellTokenAddress: sellTokenAddress,
-                        buyTokenAddress: buyTokenAddress,
-                        sellAmount: BigInt(swap.sellAmount),
-                    };
-                    const quote = await fetchQuotes(quoteParams);
-                    const bestQuote = quote[0];
+                const sellTokenAddress = STARKNET_TOKENS.find(
+                    (t) => t.name === swap.sellTokenName
+                ).address;
+                const buyTokenAddress = STARKNET_TOKENS.find(
+                    (t) => t.name === swap.buyTokenName
+                ).address;
+
+                // Get quote for the proposed trade
+                const quoteParams: QuoteRequest = {
+                    sellTokenAddress: sellTokenAddress,
+                    buyTokenAddress: buyTokenAddress,
+                    sellAmount: BigInt(swap.sellAmount),
+                };
+
+                try {
+                    const quotes = await fetchQuotes(quoteParams);
+                    const bestQuote = quotes[0];
+
+                    if (!bestQuote) {
+                        throw new Error("No valid quote received from fetchQuotes.");
+                    }
+
                     // Execute swap
                     const swapResult = await executeAvnuSwap(
                         getStarknetAccount(runtime),
-                        quote[0],
+                        bestQuote,
                         {
-                            slippage: 0.05, // 5% slippage
+                            slippage: 0.05,
                             executeApprove: true,
                         }
                     );
+
+                    const newTrade: Trade = {
+                        sellToken: swap.sellTokenName,
+                        buyToken: swap.buyTokenName,
+                        sellAmount: swap.sellAmount.toString(),
+                        buyAmount: bestQuote.buyAmount.toString(),
+                        timestamp: Date.now()
+                    };
+
+                    const updatedTradeHistory = [newTrade, ...tradeHistory].slice(0, MAX_TRADES_HISTORY);
+
+                    const tradeHistoryText = updatedTradeHistory
+                        .map(trade => `${new Date(trade.timestamp).toLocaleString()}: Sold ${trade.sellAmount.toString()} ${trade.sellToken} for ${trade.buyAmount.toString()} ${trade.buyToken}`
+                        )
+                        .join('\n');
+
+                    const tradeMemory: Memory = {
+                        id: uuid() as `${string}-${string}-${string}-${string}-${string}`,
+                        userId: state.userId!,
+                        agentId: runtime.agentId,
+                        roomId: state.roomId,
+                        content: {
+                            text: tradeHistoryText,
+                            type: 'trade_history',
+                            data: updatedTradeHistory
+                        }
+                    };
+
+                    await runtime.knowledgeManager.createMemory(tradeMemory);
+
                     const tradeObject = {
                         tradeId: swapResult.transactionHash,
                         trade: {
@@ -180,17 +228,12 @@ export const tradeAction: Action = {
                             buyTokenName: swap.buyTokenName,
                             buyTokenAddress: buyTokenAddress,
                             sellAmount: swap.sellAmount.toString(),
-                            buyAmount: bestQuote
-                                ? bestQuote.buyAmount.toString()
-                                : "0",
-                            tradePriceUSD: bestQuote
-                                ? bestQuote.buyTokenPriceInUsd
-                                : "0",
+                            buyAmount: bestQuote ? bestQuote.buyAmount.toString() : "0",
+                            tradePriceUSD: bestQuote ? bestQuote.buyTokenPriceInUsd : "0",
                             explanation: parsedDecision.Explanation,
                         },
                     };
 
-                    // Create the DTO
                     const tradingInfoDto = {
                         runtimeAgentId: state.agentId,
                         information: tradeObject,
@@ -208,13 +251,13 @@ export const tradeAction: Action = {
                     return false;
                 }
             } else {
-                console.log("It is not relevant to trade at the moment."); // TOODO: add better and personnalized reason related to personnality
+                console.log("It is not relevant to trade at the moment.");
+                return true;
             }
         } catch (error) {
             console.error("JSON parsing error:", error);
-            return null;
+            return false;
         }
-        return true;
     },
-    examples: [] as ActionExample[][],
-} as Action;
+    examples: []
+}
