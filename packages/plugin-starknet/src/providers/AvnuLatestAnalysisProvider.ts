@@ -12,8 +12,13 @@ const AVNU_ASSETS = [
 
 const fetchAvnuLatestAnalysis = async (assets: string[] = AVNU_ASSETS): Promise<AssetAnalysis[]> => {
     const assetsParam = assets.join(',');
+    const apiKey = process.env.BACKEND_API_KEY;
+    const backendPort = process.env.BACKEND_PORT || "8080";
+    const isLocal = process.env.LOCAL_DEVELOPMENT === "TRUE";
+    const host = isLocal ? process.env.HOST : "host.docker.internal";
+
     const response = await fetch(
-        `http://127.0.0.1:8080/analysis/latest?assets=${assetsParam}&platform=avnu`,
+        `http://${host}:${backendPort}/analysis/latest?assets=${assetsParam}&platform=avnu`,
         {
             headers: {
                 'accept': '*/*',

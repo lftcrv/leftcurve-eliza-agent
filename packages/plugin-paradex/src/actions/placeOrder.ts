@@ -55,9 +55,8 @@ interface OrderRequest {
 export const sendTradingInfo = async (tradingInfoDto, backendPort, apiKey) => {
     // TODO: duplicated code from plugin-starknet. Refacto code
     try {
-        // const isLocal = process.env.LOCAL_DEVELOPMENT === "TRUE";
-        // const host = isLocal ? "localhost" : "172.17.0.1";
-        const host = "host.docker.internal";
+        const isLocal = process.env.LOCAL_DEVELOPMENT === "TRUE";
+        const host = isLocal ? process.env.HOST : "host.docker.internal";
 
         elizaLogger.info(
             "Sending trading info to:",
