@@ -1,10 +1,8 @@
 import { PGLiteDatabaseAdapter } from "@elizaos/adapter-pglite";
 import { PostgresDatabaseAdapter } from "@elizaos/adapter-postgres";
-import { QdrantDatabaseAdapter } from "@elizaos/adapter-qdrant";
 import { RedisClient } from "@elizaos/adapter-redis";
 import { SqliteDatabaseAdapter } from "@elizaos/adapter-sqlite";
 import { AutoClientInterface } from "@elizaos/client-auto";
-import { DiscordClientInterface } from "@elizaos/client-discord";
 
 import { TwitterClientInterface } from "@elizaos/client-twitter";
 import { MongoDBDatabaseAdapter } from "@elizaos/adapter-mongodb";
@@ -38,7 +36,6 @@ import {
 
 import { bootstrapPlugin } from "@elizaos/plugin-bootstrap";
 import { createNodePlugin } from "@elizaos/plugin-node";
-import { OpacityAdapter } from "@elizaos/plugin-opacity";
 import { TEEMode } from "@elizaos/plugin-tee";
 import Database from "better-sqlite3";
 import fs from "fs";
@@ -624,20 +621,6 @@ function initializeDatabase(dataDir: string) {
             dataDir: process.env.PGLITE_DATA_DIR,
         });
         return db;
-    } else if (
-        process.env.QDRANT_URL &&
-        process.env.QDRANT_KEY &&
-        process.env.QDRANT_PORT &&
-        process.env.QDRANT_VECTOR_SIZE
-    ) {
-        elizaLogger.info("Initializing Qdrant adapter...");
-        const db = new QdrantDatabaseAdapter(
-            process.env.QDRANT_URL,
-            process.env.QDRANT_KEY,
-            Number(process.env.QDRANT_PORT),
-            Number(process.env.QDRANT_VECTOR_SIZE),
-        );
-        return db;
     } else {
         const filePath =
             process.env.SQLITE_FILE ?? path.resolve(dataDir, "db.sqlite");
@@ -779,26 +762,6 @@ export async function createAgent(
     // }
     // Initialize Opacity adapter if environment variables are present
     let verifiableInferenceAdapter;
-    if (
-        process.env.OPACITY_TEAM_ID &&
-        process.env.OPACITY_CLOUDFLARE_NAME &&
-        process.env.OPACITY_PROVER_URL &&
-        process.env.VERIFIABLE_INFERENCE_ENABLED === "true"
-    ) {
-        verifiableInferenceAdapter = new OpacityAdapter({
-            teamId: process.env.OPACITY_TEAM_ID,
-            teamName: process.env.OPACITY_CLOUDFLARE_NAME,
-            opacityProverUrl: process.env.OPACITY_PROVER_URL,
-            modelProvider: character.modelProvider,
-            token: token,
-        });
-        elizaLogger.log("Verifiable inference adapter initialized");
-        elizaLogger.log("teamId", process.env.OPACITY_TEAM_ID);
-        elizaLogger.log("teamName", process.env.OPACITY_CLOUDFLARE_NAME);
-        elizaLogger.log("opacityProverUrl", process.env.OPACITY_PROVER_URL);
-        elizaLogger.log("modelProvider", character.modelProvider);
-        elizaLogger.log("token", token);
-    }
 
     return new AgentRuntime({
         databaseAdapter: db,
