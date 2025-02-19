@@ -32,22 +32,12 @@ run)
         # "adapter-postgres"
         "adapter-sqlite"
         # "adapter-sqljs"
-        # "adapter-supabase"
         "client-auto"
         "client-direct"
-        # "client-discord"
-        # "client-farcaster"
-        # "client-telegram"
         "client-twitter"
         "core"
-        # "my-plugin"
         "plugin-starknet"
         "plugin-bootstrap"
-        # "plugin-image-generation"
-        # "plugin-node"
-        # "plugin-solana"
-        # "plugin-evm"
-        # "plugin-tee"
     )
 
     CMD="docker run --platform linux/amd64 -p 3000:3000 -d"
@@ -63,7 +53,7 @@ run)
 
     # Add core types mount separately (special case)
     CMD="$CMD -v $(pwd)/packages/core/types:/app/packages/core/types"
-    CMD="$CMD --name eliza eliza"
+    CMD="$CMD --name eliza eliza sh -c 'pnpm start --character=characters/trump.character.json & pnpm start:client'"
 
     eval "$CMD"
     ;;

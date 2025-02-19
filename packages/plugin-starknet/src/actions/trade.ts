@@ -50,8 +50,9 @@ export const MultipleTokenPriceFeeds = async (): Promise<string> => {
 
 export const sendTradingInfo = async (tradingInfoDto, backendPort, apiKey) => {
     try {
-        const isLocal = process.env.LOCAL_DEVELOPMENT === "TRUE";
-        const host = isLocal ? "localhost" : "172.17.0.1";    // todo put in env var
+        // const isLocal = process.env.LOCAL_DEVELOPMENT === "TRUE";
+        // const host = isLocal ? "localhost" : "172.17.0.1";    // todo put in env var
+        const host = "host.docker.internal";
 
         elizaLogger.info(
             "Sending trading info to:",
@@ -115,9 +116,6 @@ export const tradeAction: Action = {
             state = await runtime.updateRecentMessageState(state);
         }
 
-        const CONTAINER_ID = process.env.CONTAINER_ID;
-        if (!CONTAINER_ID) throw new Error("CONTAINER_ID not set");
-
         const tokenInfos = await MultipleTokenInfos();
         const tokenPrices = await MultipleTokenPriceFeeds();
 
@@ -176,7 +174,6 @@ export const tradeAction: Action = {
                     );
                     const tradeObject = {
                         tradeId: swapResult.transactionHash,
-                        containerId: CONTAINER_ID,
                         trade: {
                             sellTokenName: swap.sellTokenName,
                             sellTokenAddress: sellTokenAddress,

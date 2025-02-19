@@ -119,18 +119,21 @@ export const analysisParadexProvider: Provider = {
 
             const backendPort = process.env.BACKEND_PORT || "3080";
             const apiKey = process.env.BACKEND_API_KEY;
-            const isLocal = process.env.LOCAL_DEVELOPMENT === "TRUE";
+            // const isLocal = process.env.LOCAL_DEVELOPMENT === "TRUE";
+            // const host = isLocal ? "localhost" : "172.17.0.1";
+            const host = "host.docker.internal";
+
 
             if (!apiKey) {
                 elizaLogger.error("Backend API key not set");
                 return "Unable to fetch analysis - missing API key.";
             }
 
-            const host = isLocal ? "localhost" : "172.17.0.1";
 
             const assetsQuery = "BTC,ETH,STRK,AAVE,AI16Z";
 
             try {
+                console.log("url",`http://${host}:${backendPort}/analysis/latest?assets=${assetsQuery}&platform=paradex`)
                 const response = await fetch(
                     `http://${host}:${backendPort}/analysis/latest?assets=${assetsQuery}&platform=paradex`,
                     {
