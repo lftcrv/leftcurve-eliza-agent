@@ -12,7 +12,7 @@ import { SystemConfig, Account } from "../utils/paradex-ts/types";
 import {
     ExtendedParadexState,
     getParadexConfig,
-    initializeAccount,
+    getAccount,
     ParadexAuthenticationError,
 } from "../utils/paradexUtils";
 import { authenticate } from "../utils/paradex-ts/api";
@@ -129,7 +129,7 @@ export const paradexPlaceOrderAction: Action = {
             const config = getParadexConfig();
 
             // Initialize account
-            const account = await initializeAccount(runtime);
+            const account = await getAccount(runtime);
             elizaLogger.success("Account initialized");
 
             try {

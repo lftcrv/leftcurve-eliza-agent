@@ -25,7 +25,7 @@ export function getParadexConfig(): SystemConfig {
     return { apiBaseUrl, starknet: { chainId } };
 }
 
-export async function initializeAccount(
+export async function getAccount(
     runtime: IAgentRuntime,
 ): Promise<Account> {
     try {

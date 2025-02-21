@@ -10,7 +10,7 @@ import {
     ParadexAuthenticationError,
     BaseParadexState,
     getParadexConfig,
-    initializeAccount,
+    getAccount,
 } from "../utils/paradexUtils";
 
 interface OrderResult {
@@ -131,7 +131,7 @@ export const openOrdersProvider: Provider = {
         }
 
         // Initialize account
-        const account = await initializeAccount(runtime);
+        const account = await getAccount(runtime);
         elizaLogger.success("Account initialized");
 
         try {

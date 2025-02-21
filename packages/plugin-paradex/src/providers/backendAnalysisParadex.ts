@@ -6,7 +6,7 @@ import {
     elizaLogger,
     WalletAdapter,
 } from "@elizaos/core";
-import { BaseParadexState } from "../types";
+import { BaseParadexState } from "../utils/paradexUtils";
 
 interface AnalysisState extends BaseParadexState {
     openOrders?: string;

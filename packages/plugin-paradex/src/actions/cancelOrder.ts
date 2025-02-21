@@ -10,7 +10,7 @@ import {
 import {
     ExtendedParadexState,
     getParadexConfig,
-    initializeAccount,
+    getAccount,
     ParadexAuthenticationError,
 } from "../utils/paradexUtils";
 import { Account } from "../utils/paradex-ts/types";
@@ -102,7 +102,7 @@ export const paradexCancelOrderAction: Action = {
             const config = getParadexConfig();
 
             // Initialize account
-            const account = await initializeAccount(runtime);
+            const account = await getAccount(runtime);
             elizaLogger.success("Account initialized");
 
             try {

@@ -2,7 +2,7 @@ import { Provider, IAgentRuntime, Memory, elizaLogger } from "@elizaos/core";
 import {
     BaseParadexState,
     getParadexConfig,
-    initializeAccount,
+    getAccount,
     ParadexAuthenticationError,
 } from "../utils/paradexUtils";
 import { Account } from "../utils/paradex-ts/types";
@@ -120,7 +120,7 @@ export const openOrdersProvider: Provider = {
         }
 
         // Initialize account
-        const account = await initializeAccount(runtime);
+        const account = await getAccount(runtime);
         elizaLogger.success("Account initialized");
 
         try {
