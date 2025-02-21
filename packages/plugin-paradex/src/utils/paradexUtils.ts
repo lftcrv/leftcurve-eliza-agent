@@ -4,7 +4,6 @@ import { IAgentRuntime, State, elizaLogger } from "@elizaos/core";
 import { ParadexOrderError } from "../actions/placeOrder";
 import { validateParadexConfig } from "../environment";
 
-
 export function getParadexConfig(): SystemConfig {
     const network = process.env.PARADEX_NETWORK?.toLowerCase();
 
@@ -19,7 +18,7 @@ export function getParadexConfig(): SystemConfig {
         chainId = shortString.encodeShortString("PRIVATE_SN_POTC_SEPOLIA");
     } else {
         throw new Error(
-            "Invalid PARADEX_NETWORK. Please set it to 'prod' or 'testnet'."
+            "Invalid PARADEX_NETWORK. Please set it to 'prod' or 'testnet'.",
         );
     }
 
@@ -27,7 +26,7 @@ export function getParadexConfig(): SystemConfig {
 }
 
 export async function initializeAccount(
-    runtime: IAgentRuntime
+    runtime: IAgentRuntime,
 ): Promise<Account> {
     try {
         const config = await validateParadexConfig(runtime);
@@ -40,13 +39,16 @@ export async function initializeAccount(
     } catch (error) {
         elizaLogger.error("Failed to initialize account:", error);
         throw new ParadexOrderError(
-            "Failed to initialize account configuration"
+            "Failed to initialize account configuration",
         );
     }
 }
 
 export class ParadexAuthenticationError extends Error {
-    constructor(message: string, public details?: any) {
+    constructor(
+        message: string,
+        public details?: any,
+    ) {
         super(message);
         this.name = "ParadexAuthenticationError";
     }
@@ -58,4 +60,20 @@ export interface BaseParadexState extends State {
     lastMessage?: string;
     jwtToken?: string;
     jwtExpiry?: number;
+}
+
+export interface ExtendedParadexState extends BaseParadexState {
+    openOrders?: string;
+    openPositions?: string;
+    marketMetrics?: any;
+    currentBalance?: any;
+    technicalAnalysis?: any;
+    lastMessage?: string;
+    orderRequestObj?: {
+        action: string;
+        market: string;
+        size: number;
+        price?: number;
+    };
+    cancelOrderId: string;
 }

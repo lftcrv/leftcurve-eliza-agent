@@ -8,13 +8,12 @@ import {
     elizaLogger,
     generateText,
 } from "@elizaos/core";
-import { openOrdersProvider } from "../providers/fetchOpenOrders";
-import { openPositionsProvider } from "../providers/fetchOpenPositions";
-import { bboProvider } from "../providers/bbo";
-import { paradexPlaceOrderAction } from "./placeOrder";
-import { paradexCancelOrderAction } from "./cancelOrder";
 import { analysisParadexProvider } from "../providers/backendAnalysisParadex";
 import { paradexBalanceProvider } from "../providers/balanceParadex";
+import { openOrdersProvider } from "../providers/openOrders";
+import { paradexCancelOrderAction } from "./cancelOrder";
+import { paradexPlaceOrderAction } from "./placeOrder";
+import { ExtendedParadexState } from "../utils/paradexUtils";
 
 interface TradingDecision {
     action: "place_order" | "cancel_order" | "no_action";
@@ -26,21 +25,6 @@ interface TradingDecision {
         price?: number;
         // For cancel_order
         orderId?: string;
-    };
-}
-
-interface AnalysisState extends State {
-    openOrders?: string;
-    openPositions?: string;
-    marketMetrics?: any;
-    currentBalance?: any;
-    technicalAnalysis?: any;
-    lastMessage?: string;
-    orderRequestObj?: {
-        action: string;
-        market: string;
-        size: number;
-        price?: number;
     };
 }
 
@@ -143,15 +127,15 @@ const parseTradingDecision = (jsonString: string): TradingDecision => {
     if (decision.action === "place_order") {
         if (!validatePlaceOrderParams(decision.params)) {
             throw new Error(
-                `Invalid place_order params: ${JSON.stringify(decision.params)}`
+                `Invalid place_order params: ${JSON.stringify(decision.params)}`,
             );
         }
     } else if (decision.action === "cancel_order") {
         if (!validateCancelOrderParams(decision.params)) {
             throw new Error(
                 `Invalid cancel_order params: ${JSON.stringify(
-                    decision.params
-                )}`
+                    decision.params,
+                )}`,
             );
         }
     }
@@ -173,14 +157,14 @@ export const actOnParadexAction: Action = {
     handler: async (
         runtime: IAgentRuntime,
         message: Memory,
-        state?: AnalysisState
+        state?: ExtendedParadexState,
     ) => {
         elizaLogger.info("Starting ACT_ON_PARADEX analysis...");
 
         try {
             // Compose state if not provided
             if (!state) {
-                state = (await runtime.composeState(message)) as AnalysisState;
+                state = {} as ExtendedParadexState;
             }
 
             // Fetch all necessary data using providers
@@ -190,23 +174,24 @@ export const actOnParadexAction: Action = {
             const ordersData = await openOrdersProvider.get(
                 runtime,
                 message,
-                state
+                state,
             );
             state.openOrders = ordersData;
 
             // Get current positions
-            const positionsData = await openPositionsProvider.get(
-                runtime,
-                message,
-                state
-            );
-            state.openPositions = positionsData;
+            // TODO
+            // const positionsData = await openPositionsProvider.get(
+            //     runtime,
+            //     message,
+            //     state,
+            // );
+            // state.openPositions = positionsData;
 
             // Get current balance
             const currentBalance = await paradexBalanceProvider.get(
                 runtime,
                 message,
-                state
+                state,
             );
             state.currentBalance = currentBalance;
 
@@ -218,7 +203,7 @@ export const actOnParadexAction: Action = {
             const analysisData = await analysisParadexProvider.get(
                 runtime,
                 message,
-                state
+                state,
             );
             const analysisDataJSON = JSON.parse(analysisData);
             state.technicalAnalysis = JSON.stringify(analysisDataJSON, null, 2);
@@ -236,14 +221,13 @@ export const actOnParadexAction: Action = {
                 modelClass: ModelClass.LARGE,
             });
 
-
             let decision: TradingDecision;
             try {
                 const cleanedStr = cleanJsonResponse(rawResponse);
                 decision = parseTradingDecision(cleanedStr);
                 elizaLogger.info(
                     "Trading decision parsed successfully:",
-                    decision
+                    decision,
                 );
             } catch (parseError) {
                 elizaLogger.warn("Error parsing trading decision:", parseError);
@@ -254,11 +238,8 @@ export const actOnParadexAction: Action = {
             switch (decision.action) {
                 case "place_order": {
                     elizaLogger.info("Executing place order action...");
-                    if (!state) {
-                        state = {} as AnalysisState;
-                    }
-
                     const params = decision.params!;
+
                     state.orderRequestObj = {
                         action: params.side === "buy" ? "long" : "short",
                         market: params.market!,
@@ -269,7 +250,7 @@ export const actOnParadexAction: Action = {
                     return await paradexPlaceOrderAction.handler(
                         runtime,
                         message,
-                        state
+                        state,
                     );
                 }
 
@@ -279,10 +260,12 @@ export const actOnParadexAction: Action = {
                         decision.params!.orderId
                     }`;
 
+                    state.cancelOrderId = decision.params!.orderId;
+
                     return await paradexCancelOrderAction.handler(
                         runtime,
                         message,
-                        state
+                        state,
                     );
                 }
 
