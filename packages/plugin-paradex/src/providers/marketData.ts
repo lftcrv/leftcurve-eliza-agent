@@ -5,51 +5,131 @@ import {
     State,
     elizaLogger,
 } from "@elizaos/core";
-import { ParadexState } from "../types";
+import { BaseParadexState, getParadexConfig } from "../utils/paradexUtils";
 
-function getParadexUrl(): string {
-    const network = (process.env.PARADEX_NETWORK || 'testnet').toLowerCase();
-    if (network !== 'testnet' && network !== 'prod') {
-        throw new Error("PARADEX_NETWORK must be either 'testnet' or 'prod'");
-    }
-    return `https://api.${network}.paradex.trade/v1`;
+interface MarketInfo {
+    base_token: string;
+    quote_token: string;
+    market: string;
+    max_price_levels: number;
+    max_position_size: string;
+    min_position_size: string;
+    min_trade_size: string;
+    price_increment: string;
+    size_increment: string;
+    status: string;
+    tick_size: string;
 }
 
-export const marketDataProvider: Provider = {
+interface MarketsResponse {
+    results: MarketInfo[];
+}
+
+async function fetchAvailableMarkets(
+    market?: string
+): Promise<MarketsResponse> {
+    elizaLogger.info("Starting fetchAvailableMarkets...");
+
+    try {
+        const config = getParadexConfig();
+
+        // Construct URL with optional market parameter
+        const url = market
+            ? `${config.apiBaseUrl}/markets?market=${market}`
+            : `${config.apiBaseUrl}/markets`;
+
+        elizaLogger.info("Fetching markets from URL:", url);
+
+        const response = await fetch(url, {
+            headers: {
+                Accept: "application/json",
+            },
+        });
+
+        if (!response.ok) {
+            const errorText = await response.text();
+            throw new Error(
+                `Failed to fetch markets: ${response.status} - ${errorText}`
+            );
+        }
+
+        const data = await response.json();
+        elizaLogger.info("Successfully fetched markets data");
+        return data;
+    } catch (error) {
+        elizaLogger.error("Error in fetchAvailableMarkets:", error);
+        throw error;
+    }
+}
+
+function formatMarketInfo(market: MarketInfo): string {
+    try {
+        return `${market.market} | Min Trade: ${market.min_trade_size} | Max Position: ${market.max_position_size} | Status: ${market.status}`;
+    } catch (error) {
+        elizaLogger.error(
+            "Error formatting market:",
+            error,
+            "Market data:",
+            market
+        );
+        return `Error formatting market ${market.market}`;
+    }
+}
+
+export const availableMarketsProvider: Provider = {
     get: async (
         runtime: IAgentRuntime,
         message: Memory,
-        state?: State & ParadexState
+        state?: BaseParadexState
     ) => {
-        console.log("Starting marketDataProvider.get...");
-        const baseUrl = getParadexUrl();
+        elizaLogger.info("Starting availableMarketsProvider.get...");
+
+        if (!state) {
+            state = (await runtime.composeState(message)) as BaseParadexState;
+        }
+
         try {
-            const response = await fetch(
-                `${baseUrl}/markets`,
-                {
-                    headers: { Accept: "application/json" },
-                }
-            );
+            const marketsData = await fetchAvailableMarkets();
 
-            if (!response.ok) {
-                throw new Error(`API request failed: ${response.status}`);
+            if (!marketsData.results || marketsData.results.length === 0) {
+                elizaLogger.info("No markets found");
+                return "No available markets found.";
             }
 
-            const data = await response.json();
-            const markets = data.results;
-            const marketList = `Available markets on Paradex: ${markets.map((m) => m.symbol).join(", ")}`;
+            // Filter active markets and sort by market name
+            const activeMarkets = marketsData.results
+                .filter((market) => market.status === "active")
+                .sort((a, b) => a.market.localeCompare(b.market));
+
+            const formattedMarkets = activeMarkets.map(formatMarketInfo);
+
+            // Store markets data in state if available
             if (state) {
-                state.marketsInfo = marketList;
+                state.availableMarkets = activeMarkets;
             }
 
-            return marketList;
+            const marketsSummary = `
+Available Markets on Paradex:
+${formattedMarkets.join("\n")}
+
+Total Active Markets: ${activeMarkets.length}
+Trade Pairs: ${Array.from(new Set(activeMarkets.map((m) => m.base_token))).join(
+                ", "
+            )}
+`;
+
+            elizaLogger.info("Markets data retrieved successfully");
+            return marketsSummary;
         } catch (error) {
-            console.error("Error in marketDataProvider:", error);
-            const errorMsg = "Unable to fetch market data.";
-            if (state) {
-                state.marketsInfo = errorMsg;
+            elizaLogger.error("Error in availableMarketsProvider:", error);
+
+            if (error instanceof Error) {
+                if (error.message.includes("fetch")) {
+                    return "Failed to retrieve markets from Paradex. Please try again later.";
+                }
             }
-            return errorMsg;
+
+            return "Unable to fetch available markets. Please try again later.";
         }
     },
 };

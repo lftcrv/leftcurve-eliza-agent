@@ -5,7 +5,9 @@ import {
     State,
     elizaLogger,
 } from "@elizaos/core";
-import { getJwtToken, ParadexAuthError } from "../utils/getJwtParadex";
+import { Account } from "../utils/paradex-ts/types";
+import { authenticate } from "../utils/paradex-ts/api";
+import { getParadexConfig } from "../utils/paradexUtils";
 
 interface ParadexState extends State {
     starknetAccount?: string;
@@ -27,30 +29,31 @@ interface BalanceResponse {
     results: BalanceResult[];
 }
 
-function getParadexUrl(): string {
-    const network = (process.env.PARADEX_NETWORK || "testnet").toLowerCase();
-    if (network !== "testnet" && network !== "prod") {
-        throw new Error("PARADEX_NETWORK must be either 'testnet' or 'prod'");
-    }
-    return `https://api.${network}.paradex.trade/v1`;
-}
+async function fetchAccountBalance(): Promise<BalanceResponse> {
+    const config = getParadexConfig();
 
-async function fetchAccountBalance(
-    jwt: string,
-    account: string
-): Promise<BalanceResponse> {
-    const baseUrl = getParadexUrl();
+    const account: Account = {
+        address: process.env.PARADEX_ACCOUNT_ADDRESS,
+        publicKey: process.env.PARADEX_ACCOUNT_ADDRESS,
+        privateKey: process.env.PARADEX_PRIVATE_KEY,
+        ethereumAccount: process.env.ETHEREUM_ACCOUNT_ADDRESS,
+    };
+
+    account.jwtToken = await authenticate(config, account);
+
+    if (!account.jwtToken) {
+        console.error("No JWT token");
+    }
     try {
-        const balanceResponse = await fetch(`${baseUrl}/balance`, {
+        const balanceResponse = await fetch(`${config.apiBaseUrl}/balance`, {
             headers: {
-                Authorization: `Bearer ${jwt}`,
+                Authorization: `Bearer ${account.jwtToken}`,
                 Accept: "application/json",
             },
         });
         return await balanceResponse.json();
     } catch (error) {
         console.error("Error fetching account balance:", error);
-        throw new ParadexAuthError("Failed to fetch account balance", error);
     }
 }
 
@@ -65,28 +68,7 @@ export const paradexBalanceProvider: Provider = {
         }
 
         try {
-            const ethPrivateKey = process.env.ETHEREUM_PRIVATE_KEY;
-            if (!ethPrivateKey) {
-                console.error("ETHEREUM_PRIVATE_KEY not set");
-                throw new ParadexAuthError(
-                    "ETHEREUM_PRIVATE_KEY environment variable not set"
-                );
-            }
-
-            const authResult = await getJwtToken(ethPrivateKey);
-
-            if (!authResult.jwt_token) {
-                console.error("No JWT token in result:", authResult);
-                throw new ParadexAuthError("Failed to get JWT token");
-            }
-            state.jwtToken = authResult.jwt_token;
-            state.jwtExpiry = authResult.expiry;
-            state.starknetAccount = authResult.account_address;
-
-            const balance = await fetchAccountBalance(
-                authResult.jwt_token,
-                authResult.account_address
-            );
+            const balance = await fetchAccountBalance();
 
             if (!balance.results || balance.results.length === 0) {
                 return "No balance information available.";
@@ -99,12 +81,10 @@ export const paradexBalanceProvider: Provider = {
                 })
                 .join("\n");
 
+            elizaLogger.success(`Current Balances:\n${formattedBalances}`);
             return `Current Balances:\n${formattedBalances}`;
         } catch (error) {
             console.error("Balance fetch error:", error);
-            if (error instanceof ParadexAuthError) {
-                console.error("Details:", error.details);
-            }
             return "Unable to fetch balance. Please try again later.";
         }
     },

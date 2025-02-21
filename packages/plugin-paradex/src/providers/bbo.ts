@@ -1,12 +1,10 @@
-import {
-    Provider,
-    IAgentRuntime,
-    Memory,
-    State,
-    elizaLogger,
-    WalletAdapter,
-} from "@elizaos/core";
-import { ParadexState } from "../types";
+import { Provider, IAgentRuntime, Memory, elizaLogger } from "@elizaos/core";
+import { BaseParadexState, getParadexConfig } from "../utils/paradexUtils";
+
+export interface BBOState extends BaseParadexState {
+    watchlist: string[];
+    marketMetrics: Record<string, MarketMetrics>;
+}
 
 interface BBOResponse {
     ask: string;
@@ -14,84 +12,132 @@ interface BBOResponse {
     bid: string;
     bid_size: string;
     market: string;
+    last_updated_at: number;
+    seq_no: number;
 }
 
-function getParadexUrl(): string {
-    const network = (process.env.PARADEX_NETWORK || "testnet").toLowerCase();
-    if (network !== "testnet" && network !== "prod") {
-        throw new Error("PARADEX_NETWORK must be either 'testnet' or 'prod'");
+interface MarketMetrics {
+    spread: number;
+    spreadPercentage: number;
+    lastBid: number;
+    lastAsk: number;
+    timestamp: number;
+}
+
+class BBOFormatting {
+    static formatNumber(value: string, decimals: number = 2): string {
+        try {
+            const num = parseFloat(value);
+            return isNaN(num) ? "N/A" : num.toFixed(decimals);
+        } catch {
+            return "N/A";
+        }
     }
-    return `https://api.${network}.paradex.trade/v1`;
+
+    static calculateSpread(
+        bid: number,
+        ask: number
+    ): { spread: number; percentage: number } {
+        const spread = ask - bid;
+        const percentage = (spread / bid) * 100;
+        return { spread, percentage };
+    }
+
+    static formatMarketBBO(market: string, data: BBOResponse): string {
+        try {
+            const bid = parseFloat(data.bid);
+            const ask = parseFloat(data.ask);
+            const { percentage } = this.calculateSpread(bid, ask);
+
+            return `${market}: ${this.formatNumber(
+                data.bid
+            )}/${this.formatNumber(data.ask)} (${this.formatNumber(
+                percentage.toString()
+            )}% spread)`;
+        } catch (error) {
+            elizaLogger.error("Error formatting BBO:", error);
+            return `${market}: Failed to format data`;
+        }
+    }
+}
+
+async function fetchMarketBBO(market: string): Promise<BBOResponse> {
+    try {
+        const config = getParadexConfig();
+        const response = await fetch(`${config.apiBaseUrl}/bbo/${market}`, {
+            headers: {
+                Accept: "application/json",
+            },
+        });
+
+        if (!response.ok) {
+            throw new Error(
+                `Failed to fetch BBO for ${market}: ${response.status}`
+            );
+        }
+
+        return await response.json();
+    } catch (error) {
+        elizaLogger.error(`Error fetching BBO for ${market}:`, error);
+        throw error;
+    }
 }
 
 export const bboProvider: Provider = {
-    get: async (
-        runtime: IAgentRuntime,
-        message: Memory,
-        state?: State & ParadexState
-    ) => {
-        const baseUrl = getParadexUrl();
+    get: async (runtime: IAgentRuntime, message: Memory, state?: BBOState) => {
+        elizaLogger.info("Starting BBO provider...");
+
+        if (!state) {
+            state = (await runtime.composeState(message)) as BBOState;
+        }
+        
+        // Ensure watchlist and marketMetrics exist
+        state.watchlist = state.watchlist || [];
+        state.marketMetrics = state.marketMetrics || {};
+
         try {
-            const walletAdapter = new WalletAdapter(runtime.databaseAdapter.db);
-            const watchlist = await walletAdapter.getWatchlist(message.roomId);
+            const marketMetrics: Record<string, MarketMetrics> = {};
+            const results: string[] = [];
 
-            const marketMetrics = state?.marketMetrics || {};
-            const results = [];
+            if (state.watchlist.length === 0) {
+                return "No markets in watchlist. Please add markets first.";
+            }
 
-            for (const market of watchlist) {
+            for (const market of state.watchlist) {
                 try {
-                    const response = await fetch(`${baseUrl}/bbo/${market}`);
-
-                    if (!response.ok) {
-                        elizaLogger.warn(
-                            `Failed to fetch BBO for market ${market}: ${response.statusText}`
-                        );
-                        continue;
-                    }
-
-                    const data: BBOResponse = await response.json();
-                    const lastBid = parseFloat(data.bid);
-                    const lastAsk = parseFloat(data.ask);
-                    const spread = lastAsk - lastBid;
-                    const spreadPercentage = (spread / lastBid) * 100;
+                    const bboData = await fetchMarketBBO(market);
+                    const bid = parseFloat(bboData.bid);
+                    const ask = parseFloat(bboData.ask);
+                    const { spread, percentage } =
+                        BBOFormatting.calculateSpread(bid, ask);
 
                     marketMetrics[market] = {
                         spread,
-                        spreadPercentage,
-                        lastBid,
-                        lastAsk,
-                        timestamp: Date.now(),
+                        spreadPercentage: percentage,
+                        lastBid: bid,
+                        lastAsk: ask,
+                        timestamp: bboData.last_updated_at,
                     };
 
                     results.push(
-                        `${market}: ${lastBid}/${lastAsk} (${spreadPercentage.toFixed(
-                            2
-                        )}% spread)`
+                        BBOFormatting.formatMarketBBO(market, bboData)
                     );
                 } catch (marketError) {
-                    elizaLogger.error(
-                        `Error processing market ${market}:`,
-                        marketError
-                    );
                     results.push(`${market}: Failed to fetch data`);
                 }
             }
 
-            if (state) {
-                state.marketMetrics = marketMetrics;
-                state.watchlist = watchlist;
-            }
+            state.marketMetrics = marketMetrics;
 
-            if (results.length === 0) {
-                return "No markets in watchlist or unable to fetch BBO data";
-            }
+            const summary = `
+Latest BBO Metrics for Your Watchlist:
+${results.join("\n")}`;
 
-            return `Here are the latest BBO metrics for your watchlist:\n${results.join(
-                "\n"
-            )}`;
+            elizaLogger.info("Successfully retrieved BBO data");
+            return summary.trim();
         } catch (error) {
-            elizaLogger.error("BBO Provider error:", error);
-            return "Unable to fetch BBO data. Please check your watchlist and try again.";
+            elizaLogger.error("Error in BBO provider:", error.message);
+            return "Unable to fetch BBO data. Please check your configuration and try again.";
         }
     },
 };
