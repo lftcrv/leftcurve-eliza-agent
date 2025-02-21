@@ -12,9 +12,9 @@ export async function onboardUser(config: SystemConfig, account: Account) {
   const timestamp = Date.now();
   const signature = signOnboardingRequest(config, account);
 
-  const inputBody = JSON.stringify({
-    public_key: account.publicKey,
-  });
+  // const inputBody = JSON.stringify({
+  //   public_key: account.publicKey,
+  // });
 
   const headers = {
     "Content-Type": "application/json",
@@ -26,7 +26,7 @@ export async function onboardUser(config: SystemConfig, account: Account) {
   };
 
   try {
-    await axios.post(`${config.apiBaseUrl}/onboarding`, inputBody, { headers });
+    await axios.post(`${config.apiBaseUrl}/onboarding`, { headers });
     console.log("Onboarding successful");
   } catch (e) {
     handleError(e as AxiosError);
