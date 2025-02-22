@@ -43,6 +43,16 @@ export class ParadexOrderError extends Error {
     }
 }
 
+function formatPrice(price: number): string {
+    // Round to nearest 0.1
+    return (Math.round(price * 10) / 10).toFixed(1);
+}
+
+function formatSize(size: number): string {
+    // Convert to string with maximum 8 decimal places
+    return Number(size).toFixed(8);
+}
+
 async function placeOrder(
     config: SystemConfig,
     account: Account,
@@ -54,12 +64,16 @@ async function placeOrder(
         }
 
         const timestamp = Date.now();
+
+        // Format the order details with proper price and size formatting, todo should adapt to each crypto for rounding decimals 
         const formattedOrderDetails: Record<string, string> = {
             market: orderDetails.market,
             side: orderDetails.side,
             type: orderDetails.type,
-            size: orderDetails.size,
-            ...(orderDetails.price && { price: orderDetails.price }),
+            size: formatSize(parseFloat(orderDetails.size)),
+            ...(orderDetails.price && {
+                price: formatPrice(parseFloat(orderDetails.price)),
+            }),
             ...(orderDetails.instruction && {
                 instruction: orderDetails.instruction,
             }),
@@ -80,7 +94,7 @@ async function placeOrder(
                 Authorization: `Bearer ${account.jwtToken}`,
             },
             body: JSON.stringify({
-                ...orderDetails,
+                ...formattedOrderDetails,
                 signature,
                 signature_timestamp: timestamp,
             }),
@@ -118,7 +132,6 @@ export const paradexPlaceOrderAction: Action = {
         state?: ExtendedParadexState,
     ) => {
         elizaLogger.info("Starting order placement...");
-        console.log("state:", state);
 
         try {
             // Initialize state if needed
@@ -145,7 +158,7 @@ export const paradexPlaceOrderAction: Action = {
 
             const request = state.orderRequestObj;
 
-            // Convert to order parameters
+            // Convert to order parameters with proper formatting
             const orderParams: PlaceOrderParams = {
                 market: request.market,
                 side:
@@ -153,10 +166,12 @@ export const paradexPlaceOrderAction: Action = {
                         ? "BUY"
                         : "SELL",
                 type: request.price ? "LIMIT" : "MARKET",
-                size: request.size.toString(),
+                size: formatSize(request.size),
                 instruction: "GTC",
-                ...(request.price && { price: request.price.toString() }),
+                ...(request.price && { price: formatPrice(request.price) }),
             };
+
+            elizaLogger.info("Placing order with params:", orderParams);
 
             // Place the order
             const result = await placeOrder(config, account, orderParams);

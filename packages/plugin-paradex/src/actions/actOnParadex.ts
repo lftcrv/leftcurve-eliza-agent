@@ -225,10 +225,7 @@ export const actOnParadexAction: Action = {
             try {
                 const cleanedStr = cleanJsonResponse(rawResponse);
                 decision = parseTradingDecision(cleanedStr);
-                elizaLogger.info(
-                    "Trading decision parsed successfully:",
-                    decision,
-                );
+                elizaLogger.info("Trading decision parsed successfully:");
             } catch (parseError) {
                 elizaLogger.warn("Error parsing trading decision:", parseError);
                 return false;

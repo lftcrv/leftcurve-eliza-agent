@@ -1,170 +1,219 @@
-import axios, { AxiosError } from "axios";
-
 import { Account, SystemConfig } from "./types";
 import { signAuthRequest, signOnboardingRequest, signOrder } from "./signature";
 
-function handleError(error: AxiosError) {
-  console.error(error.response);
+function handleError(error: any) {
+    console.error(error.response || error);
 }
 
 // Onboarding
 export async function onboardUser(config: SystemConfig, account: Account) {
-  const timestamp = Date.now();
-  const signature = signOnboardingRequest(config, account);
+    const timestamp = Date.now();
+    const signature = signOnboardingRequest(config, account);
 
-  // const inputBody = JSON.stringify({
-  //   public_key: account.publicKey,
-  // });
+    const headers = {
+        "Content-Type": "application/json",
+        Accept: "application/json",
+        "PARADEX-ETHEREUM-ACCOUNT": account.ethereumAccount,
+        "PARADEX-STARKNET-ACCOUNT": account.address,
+        "PARADEX-STARKNET-SIGNATURE": signature,
+        "PARADEX-TIMESTAMP": timestamp.toString(),
+    };
 
-  const headers = {
-    "Content-Type": "application/json",
-    Accept: "application/json",
-    "PARADEX-ETHEREUM-ACCOUNT": account.ethereumAccount,
-    "PARADEX-STARKNET-ACCOUNT": account.address,
-    "PARADEX-STARKNET-SIGNATURE": signature,
-    "PARADEX-TIMESTAMP": timestamp,
-  };
+    try {
+        const response = await fetch(`${config.apiBaseUrl}/onboarding`, {
+            method: "POST",
+            headers,
+            body: JSON.stringify({
+                public_key: account.publicKey,
+            }),
+        });
 
-  try {
-    await axios.post(`${config.apiBaseUrl}/onboarding`, { headers });
-    console.log("Onboarding successful");
-  } catch (e) {
-    handleError(e as AxiosError);
-  }
+        if (!response.ok) {
+            throw new Error(`HTTP error! status: ${response.status}`);
+        }
+
+        console.log("Onboarding successful");
+    } catch (e) {
+        handleError(e);
+    }
 }
 
 // Auth
 export async function authenticate(config: SystemConfig, account: Account) {
-  const { signature, timestamp, expiration } = signAuthRequest(config, account);
-  const headers = {
-    Accept: "application/json",
-    "PARADEX-STARKNET-ACCOUNT": account.address,
-    "PARADEX-STARKNET-SIGNATURE": signature,
-    "PARADEX-TIMESTAMP": timestamp,
-    "PARADEX-SIGNATURE-EXPIRATION": expiration,
-  };
-
-  try {
-    const response = await axios.post(
-      `${config.apiBaseUrl}/auth`,
-      {},
-      { headers }
+    const { signature, timestamp, expiration } = signAuthRequest(
+        config,
+        account,
     );
-    return response.data.jwt_token;
-  } catch (e) {
-    handleError(e as AxiosError);
-  }
+    const headers = {
+        Accept: "application/json",
+        "PARADEX-STARKNET-ACCOUNT": account.address,
+        "PARADEX-STARKNET-SIGNATURE": signature,
+        "PARADEX-TIMESTAMP": timestamp.toString(),
+        "PARADEX-SIGNATURE-EXPIRATION": expiration.toString(),
+    };
+
+    try {
+        const response = await fetch(`${config.apiBaseUrl}/auth`, {
+            method: "POST",
+            headers,
+        });
+
+        if (!response.ok) {
+            throw new Error(`HTTP error! status: ${response.status}`);
+        }
+
+        const data = await response.json();
+        return data.jwt_token;
+    } catch (e) {
+        handleError(e);
+    }
 }
 
 // Orders - POST
 export async function createOrder(
-  config: SystemConfig,
-  account: Account,
-  orderDetails: Record<string, string>
+    config: SystemConfig,
+    account: Account,
+    orderDetails: Record<string, string>,
 ) {
-  const timestamp = Date.now();
-  const signature = signOrder(config, account, orderDetails, timestamp);
+    const timestamp = Date.now();
+    const signature = signOrder(config, account, orderDetails, timestamp);
 
-  const inputBody = JSON.stringify({
-    ...orderDetails,
-    signature: signature,
-    signature_timestamp: timestamp,
-  });
+    const headers = {
+        "Content-Type": "application/json",
+        Accept: "application/json",
+        Authorization: `Bearer ${account.jwtToken}`,
+    };
 
-  const headers = {
-    "Content-Type": "application/json",
-    Accept: "application/json",
-    Authorization: `Bearer ${account.jwtToken}`,
-  };
+    try {
+        const response = await fetch(`${config.apiBaseUrl}/orders`, {
+            method: "POST",
+            headers,
+            body: JSON.stringify({
+                ...orderDetails,
+                signature: signature,
+                signature_timestamp: timestamp,
+            }),
+        });
 
-  try {
-    const response = await axios.post(
-      `${config.apiBaseUrl}/orders`,
-      inputBody,
-      { headers }
-    );
-    console.log("Order created:", response.data);
-  } catch (e) {
-    handleError(e as AxiosError);
-  }
+        if (!response.ok) {
+            throw new Error(`HTTP error! status: ${response.status}`);
+        }
+
+        const data = await response.json();
+        console.log("Order created:", data);
+        return data;
+    } catch (e) {
+        handleError(e);
+    }
 }
 
 // Orders - GET
 export async function getOpenOrders(config: SystemConfig, account: Account) {
-  const headers = {
-    Accept: "application/json",
-    Authorization: `Bearer ${account.jwtToken}`,
-  };
+    const headers = {
+        Accept: "application/json",
+        Authorization: `Bearer ${account.jwtToken}`,
+    };
 
-  try {
-    const response = await axios.get(`${config.apiBaseUrl}/orders`, {
-      headers,
-    });
-    console.log("Open Orders:", response.data);
-  } catch (e) {
-    handleError(e as AxiosError);
-  }
+    try {
+        const response = await fetch(`${config.apiBaseUrl}/orders`, {
+            headers,
+        });
+
+        if (!response.ok) {
+            throw new Error(`HTTP error! status: ${response.status}`);
+        }
+
+        const data = await response.json();
+        console.log("Open Orders:", data);
+        return data;
+    } catch (e) {
+        handleError(e);
+    }
 }
 
 // Orders - DELETE
 export async function cancelAllOpenOrders(
-  config: SystemConfig,
-  account: Account,
-  market?: string
+    config: SystemConfig,
+    account: Account,
+    market?: string,
 ) {
-  const headers = {
-    Accept: "application/json",
-    Authorization: `Bearer ${account.jwtToken}`,
-  };
+    const headers = {
+        Accept: "application/json",
+        Authorization: `Bearer ${account.jwtToken}`,
+    };
 
-  const url = market
-    ? `${config.apiBaseUrl}/orders?market=${market}`
-    : `${config.apiBaseUrl}/orders`;
+    const url = market
+        ? `${config.apiBaseUrl}/orders?market=${market}`
+        : `${config.apiBaseUrl}/orders`;
 
-  try {
-    const response = await axios.delete(url, { headers });
-    console.log("All open orders cancelled:", response.data);
-    return response.data;
-  } catch (e) {
-    handleError(e as AxiosError);
-  }
+    try {
+        const response = await fetch(url, {
+            method: "DELETE",
+            headers,
+        });
+
+        if (!response.ok) {
+            throw new Error(`HTTP error! status: ${response.status}`);
+        }
+
+        const data = await response.json();
+        console.log("All open orders cancelled:", data);
+        return data;
+    } catch (e) {
+        handleError(e);
+    }
 }
 
 // Markets - GET
 export async function listAvailableMarkets(
-  config: SystemConfig,
-  market?: string
+    config: SystemConfig,
+    market?: string,
 ) {
-  const headers = {
-    Accept: "application/json",
-  };
+    const headers = {
+        Accept: "application/json",
+    };
 
-  try {
-    // If a specific market is provided, append it as a query parameter
-    const url = market
-      ? `${config.apiBaseUrl}/markets?market=${market}`
-      : `${config.apiBaseUrl}/markets`;
+    try {
+        const url = market
+            ? `${config.apiBaseUrl}/markets?market=${market}`
+            : `${config.apiBaseUrl}/markets`;
 
-    const response = await axios.get(url, { headers });
-    console.log("Available Markets:", response.data);
-  } catch (e) {
-    handleError(e as AxiosError);
-  }
+        const response = await fetch(url, {
+            headers,
+        });
+
+        if (!response.ok) {
+            throw new Error(`HTTP error! status: ${response.status}`);
+        }
+
+        const data = await response.json();
+        console.log("Available Markets:", data);
+        return data;
+    } catch (e) {
+        handleError(e);
+    }
 }
 
 // Account - GET
 export async function getAccountInfo(config: SystemConfig, account: Account) {
-  const headers = {
-    Accept: "application/json",
-    Authorization: `Bearer ${account.jwtToken}`,
-  };
+    const headers = {
+        Accept: "application/json",
+        Authorization: `Bearer ${account.jwtToken}`,
+    };
 
-  try {
-    const response = await axios.get(`${config.apiBaseUrl}/account`, {
-      headers,
-    });
-    console.log("Account Info:", response.data);
-  } catch (e) {
-    handleError(e as AxiosError);
-  }
+    try {
+        const response = await fetch(`${config.apiBaseUrl}/account`, {
+            headers,
+        });
+
+        if (!response.ok) {
+            throw new Error(`HTTP error! status: ${response.status}`);
+        }
+
+        const data = await response.json();
+        console.log("Account Info:", data);
+        return data;
+    } catch (e) {
+        handleError(e);
+    }
 }
